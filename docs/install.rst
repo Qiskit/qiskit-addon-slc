@@ -23,13 +23,6 @@ Activate your new environment.
 
     source /path/to/virtual/environment/bin/activate
 
-Note: If you are using Windows, use the following commands in PowerShell:
-
-.. code:: pwsh
-
-    python3 -m venv c:\path\to\virtual\environment
-    c:\path\to\virtual\environment\Scripts\Activate.ps1
-
 
 .. _Option 1:
 
