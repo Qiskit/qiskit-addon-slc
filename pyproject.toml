@@ -29,7 +29,7 @@ requires-python = ">=3.10"
 dependencies = [
     "matplotlib>=3.10.5, <4",
     "pyscf>=2.10, <3",
-    "qiskit>=2.1.2, <3",
+    "qiskit>=2.2, <3",
     "pauli-prop~=0.1.0",
     "rustworkx",
     "samplomatic>=0.10.1"
