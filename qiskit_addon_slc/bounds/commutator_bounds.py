@@ -162,14 +162,12 @@ def compute_bounds(
                 instruction, qargs, circuit.num_qubits, clifford=net_clifford
             )
 
-    awaitables = []
-    gathered_rates = {}
-    gathered_noise_terms = {}
+    gathered_bounds: dict[str, tuple[np.ndarray, QubitSparsePauliList]] = {}
 
     def _insert_rate(bound: CommutatorBounds, box_id: str, rate_idx: int) -> None:
-        nonlocal gathered_rates
+        nonlocal gathered_bounds
 
-        gathered_rates[box_id][rate_idx] = bound.min()
+        gathered_bounds[box_id][0][rate_idx] = bound.min()
 
     pool = mp.Pool(num_processes)
 
@@ -197,7 +195,7 @@ def compute_bounds(
             _handle_circuit_instruction(circ_inst)
             continue
 
-        gathered_rates[box_id] = np.full(len(noise_terms), 2.0)
+        gathered_bounds[box_id] = (np.full(len(noise_terms), 2.0), noise_terms)
 
         if backwards:
             # NOTE: we unroll the BoxOp immediately to allow gates contained within the box be
@@ -227,17 +225,15 @@ def compute_bounds(
             ),
         )
 
-        gathered_noise_terms[box_id] = noise_terms
         # PERF: using map_async would be more performant than apply_async for each term
         # individually. But that would imply we are still forced to process all layers as a whole
         # and cannot process individual terms.
         for pauli_idx, pauli in enumerate(local_noise_terms):
-            async_res = pool.apply_async(
+            _ = pool.apply_async(
                 norm_fn,
                 [pauli.to_pauli()],
                 callback=partial(_insert_rate, box_id=box_id, rate_idx=pauli_idx),
             )
-            awaitables.append(async_res)
 
         if not backwards:
             # NOTE: we unroll the BoxOp immediately to allow gates contained within the box be
@@ -249,8 +245,7 @@ def compute_bounds(
     pool.join()
 
     comm_norms: Bounds = {
-        box_id: PauliLindbladMap.from_components(gathered_rates[box_id], noise_terms)
-        for box_id, noise_terms in gathered_noise_terms.items()
+        box_id: PauliLindbladMap.from_components(bounds[0], bounds[1])
+        for box_id, bounds in gathered_bounds.items()
     }
-
     return comm_norms
