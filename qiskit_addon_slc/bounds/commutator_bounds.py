@@ -162,9 +162,15 @@ def compute_bounds(
                 instruction, qargs, circuit.num_qubits, clifford=net_clifford
             )
 
-    results = []
+    awaitables = []
     gathered_rates = {}
     gathered_noise_terms = {}
+
+    def _insert_rate(bound: CommutatorBounds, box_id: str, rate_idx: int) -> None:
+        nonlocal gathered_rates
+
+        gathered_rates[box_id][rate_idx] = bound.min()
+
     pool = mp.Pool(num_processes)
 
     timed_out = False
@@ -226,8 +232,12 @@ def compute_bounds(
         # individually. But that would imply we are still forced to process all layers as a whole
         # and cannot process individual terms.
         for pauli_idx, pauli in enumerate(local_noise_terms):
-            async_res = pool.apply_async(norm_fn, [pauli.to_pauli()])
-            results.append((box_id, pauli_idx, async_res))
+            async_res = pool.apply_async(
+                norm_fn,
+                [pauli.to_pauli()],
+                callback=partial(_insert_rate, box_id=box_id, rate_idx=pauli_idx),
+            )
+            awaitables.append(async_res)
 
         if not backwards:
             # NOTE: we unroll the BoxOp immediately to allow gates contained within the box be
@@ -235,15 +245,12 @@ def compute_bounds(
             for inst in circ_inst.operation.body[::-1]:
                 _handle_circuit_instruction(inst)
 
-    for box_id, pauli_idx, async_res in results:
-        bound = async_res.get()
-        gathered_rates[box_id][pauli_idx] = bound.min()
+    pool.close()
+    pool.join()
 
     comm_norms: Bounds = {
         box_id: PauliLindbladMap.from_components(gathered_rates[box_id], noise_terms)
         for box_id, noise_terms in gathered_noise_terms.items()
     }
-
-    pool.close()
 
     return comm_norms
