@@ -179,22 +179,17 @@ def compute_bounds(
             if timed_out:
                 LOGGER.warning("Bounds computation timed out.")
 
-        if noise_id is not None:
-            noise_terms: QubitSparsePauliList = noise_model_paulis[noise_id]
-
         if timed_out:
-            if box_id is not None:
-                # once timeout is reached, fill with trivial bound of 2
-                comm_norms[box_id] = PauliLindbladMap.from_components(
-                    np.full(len(noise_terms), 2.0),
-                    noise_terms,
-                )
             continue
 
         if box_id is None:
             _handle_circuit_instruction(circ_inst)
             continue
 
+        # NOTE: we know for a fact that noise_id can only be None when box_id is None
+        assert noise_id is not None
+
+        noise_terms: QubitSparsePauliList = noise_model_paulis[noise_id]
         gathered_bounds[box_id] = (np.full(len(noise_terms), 2.0), noise_terms)
 
         if backwards:
