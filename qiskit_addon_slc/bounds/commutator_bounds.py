@@ -84,29 +84,6 @@ class CommutatorBounds(NamedTuple):
         return min(self.commutator_bound + self.truncation_bias, 2.0)
 
 
-def _get_norms_for_box_terms(
-    error_paulis: QubitSparsePauliList,
-    norm_fn: Callable[[Pauli], CommutatorBounds],
-    pool: mp.pool.Pool | None,
-) -> list[CommutatorBounds]:
-    """A utility function which handles the parallelized computation of the commutator bounds.
-
-    Args:
-        error_paulis: the Pauli error terms whose bounds to compute.
-        norm_fn: the function that computes the desired bound.
-        pool: an optional pool of workers for parallelized execution.
-
-    Returns:
-        The computed bounds as returned by ``norm_fn`` for the ``error_paulis`` **in order**.
-    """
-    job_args = [(pauli.to_pauli(),) for pauli in error_paulis]
-
-    starmapper = itertools if pool is None else pool
-    results = starmapper.starmap(norm_fn, job_args)
-
-    return results
-
-
 def compute_bounds(
     circuit: QuantumCircuit,
     noise_model_paulis: dict[str, QubitSparsePauliList],
@@ -227,16 +204,16 @@ def compute_bounds(
             circuit.num_qubits,
         )
 
-        bounds_per_noise_terms = _get_norms_for_box_terms(
-            error_paulis=local_noise_terms,
-            norm_fn=partial(  # type: ignore[call-arg]
-                norm_fn,
-                gates=RotationGates(
-                    rot_gates.gates[::-1], rot_gates.qargs[::-1], rot_gates.thetas[::-1]
-                ),
+        norm_fn = partial(  # type: ignore[call-arg]
+            norm_fn,
+            gates=RotationGates(
+                rot_gates.gates[::-1], rot_gates.qargs[::-1], rot_gates.thetas[::-1]
             ),
-            pool=pool,
         )
+        job_args = [(pauli.to_pauli(),) for pauli in local_noise_terms]
+
+        starmapper = itertools if pool is None else pool
+        bounds_per_noise_terms = starmapper.starmap(norm_fn, job_args)
 
         comm_norms_this_box = []
         for bound in bounds_per_noise_terms:
