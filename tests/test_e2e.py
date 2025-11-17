@@ -19,6 +19,7 @@
 from __future__ import annotations
 
 import logging
+import multiprocessing
 import pickle
 import random
 from itertools import count
@@ -42,6 +43,8 @@ from samplomatic.utils import find_unique_box_instructions
 
 RANDOM_SEED = 42
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(module)s %(message)s")
+
+multiprocessing.set_start_method("spawn")
 
 
 def _construct_trotter_circuit(
@@ -120,6 +123,7 @@ def test_e2e(use_clifford: bool):
         eigval_max_qubits=20,
         evolution_max_terms=1000,
         atol=1e-18,
+        num_processes=8,
     )
 
     forward_tightened_bounds = tighten_with_speed_limit(
@@ -127,7 +131,10 @@ def test_e2e(use_clifford: bool):
     )
 
     backward_bounds = compute_backward_bounds(
-        boxed_circuit, noise_model_paulis, evolution_max_terms=2000
+        boxed_circuit,
+        noise_model_paulis,
+        evolution_max_terms=2000,
+        num_processes=8,
     )
 
     # NOTE: here one would get the the noise model rates from the NoiseLearner
