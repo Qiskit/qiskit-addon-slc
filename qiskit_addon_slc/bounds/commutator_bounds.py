@@ -18,13 +18,12 @@
 
 from __future__ import annotations
 
-import itertools
 import logging
 import multiprocessing as mp
 import time
 from collections.abc import Callable
 from functools import partial
-from typing import NamedTuple
+from typing import NamedTuple, cast
 
 import numpy as np
 from pauli_prop.propagation import (
@@ -170,18 +169,11 @@ def compute_bounds(
         gathered_bounds[box_id][0][rate_idx] = bound.min()
 
     pool = mp.Pool(num_processes)
+    tasks = []
 
-    timed_out = False
     start = time.time()
+
     for circ_inst, qargs, box_id, noise_id in iter_circuit(circuit, reverse=True):
-        if not timed_out and timeout is not None:
-            timed_out = time.time() - start > timeout
-            if timed_out:
-                LOGGER.warning("Bounds computation timed out.")
-
-        if timed_out:
-            continue
-
         if box_id is None:
             _handle_circuit_instruction(circ_inst)
             continue
@@ -224,11 +216,12 @@ def compute_bounds(
         # individually. But that would imply we are still forced to process all layers as a whole
         # and cannot process individual terms.
         for pauli_idx, pauli in enumerate(local_noise_terms):
-            _ = pool.apply_async(
+            task = pool.apply_async(
                 norm_fn,
                 [pauli.to_pauli()],
                 callback=partial(_insert_rate, box_id=box_id, rate_idx=pauli_idx),
             )
+            tasks.append(task)
 
         if not backwards:
             # NOTE: we unroll the BoxOp immediately to allow gates contained within the box be
@@ -236,7 +229,22 @@ def compute_bounds(
             for inst in circ_inst.operation.body[::-1]:
                 _handle_circuit_instruction(inst)
 
-    pool.close()
+    if timeout is None:
+        # we simply clear the task list causing the loop below to close the pool for us
+        tasks = []
+
+    for task in tasks:
+        if task.ready():
+            continue
+        time_spent = time.time() - start
+        time_left = cast(float, timeout) - time_spent
+        task.wait(time_left)
+        if not task.ready():
+            pool.terminate()
+            break
+    else:
+        pool.close()
+
     pool.join()
 
     comm_norms: Bounds = {
