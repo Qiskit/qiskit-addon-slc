@@ -119,7 +119,7 @@ def compute_bounds(
     """
     LOGGER.debug(f"Using {num_processes} processes")
     pool = mp.Pool(num_processes) if num_processes > 1 else None
-    starmapper = itertools if pool is None else pool
+    mapper = map if pool is None else pool.map
 
     net_clifford = Clifford.from_label("I" * circuit.num_qubits)
     rot_gates = RotationGates([], [], [])
@@ -211,9 +211,9 @@ def compute_bounds(
                 rot_gates.gates[::-1], rot_gates.qargs[::-1], rot_gates.thetas[::-1]
             ),
         )
-        job_args = [(pauli.to_pauli(),) for pauli in local_noise_terms]
+        job_args = [pauli.to_pauli() for pauli in local_noise_terms]
 
-        bounds_per_noise_terms = starmapper.starmap(norm_fn, job_args)
+        bounds_per_noise_terms = mapper(norm_fn, job_args)
 
         results.append((box_id, bounds_per_noise_terms, noise_terms))
 
