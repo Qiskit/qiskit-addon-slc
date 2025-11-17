@@ -116,10 +116,14 @@ def compute_bounds(
 
     Returns:
         The computed unequal time commutator bounds.
+
+    Raises:
+        ValueError: if ``num_processes`` is lower than 1.
     """
+    if num_processes < 1:
+        raise ValueError("Cannot use fewer than 1 processes!")
+
     LOGGER.debug(f"Using {num_processes} processes")
-    pool = mp.Pool(num_processes) if num_processes > 1 else None
-    mapper = map if pool is None else pool.map_async
 
     net_clifford = Clifford.from_label("I" * circuit.num_qubits)
     rot_gates = RotationGates([], [], [])
@@ -159,6 +163,7 @@ def compute_bounds(
             )
 
     results = []
+    pool = mp.Pool(num_processes)
 
     timed_out = False
     start = time.time()
@@ -213,7 +218,7 @@ def compute_bounds(
         )
         job_args = [pauli.to_pauli() for pauli in local_noise_terms]
 
-        mapper_result = mapper(norm_fn, job_args)
+        mapper_result = pool.map_async(norm_fn, job_args)
 
         results.append((box_id, mapper_result, noise_terms))
 
@@ -230,5 +235,7 @@ def compute_bounds(
         comm_norms[box_id] = PauliLindbladMap.from_components(
             np.asarray([bound.min() for bound in bounds_per_noise_terms]), noise_terms
         )
+
+    pool.close()
 
     return comm_norms
