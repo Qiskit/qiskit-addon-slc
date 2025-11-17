@@ -226,12 +226,9 @@ def compute_bounds(
     comm_norms: Bounds = {}
     for box_id, mapper_result, noise_terms in results:
         bounds_per_noise_terms = mapper_result if pool is None else mapper_result.get()
-        comm_norms_this_box = []
-        for bound in bounds_per_noise_terms:
-            comm_norms_this_box.append(bound.min())
 
         comm_norms[box_id] = PauliLindbladMap.from_components(
-            np.asarray(comm_norms_this_box), noise_terms
+            np.asarray([bound.min() for bound in bounds_per_noise_terms]), noise_terms
         )
 
     return comm_norms
