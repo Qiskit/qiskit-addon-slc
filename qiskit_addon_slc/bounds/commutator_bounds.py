@@ -119,7 +119,7 @@ def compute_bounds(
     """
     LOGGER.debug(f"Using {num_processes} processes")
     pool = mp.Pool(num_processes) if num_processes > 1 else None
-    mapper = map if pool is None else pool.map
+    mapper = map if pool is None else pool.map_async
 
     net_clifford = Clifford.from_label("I" * circuit.num_qubits)
     rot_gates = RotationGates([], [], [])
@@ -213,9 +213,9 @@ def compute_bounds(
         )
         job_args = [pauli.to_pauli() for pauli in local_noise_terms]
 
-        bounds_per_noise_terms = mapper(norm_fn, job_args)
+        mapper_result = mapper(norm_fn, job_args)
 
-        results.append((box_id, bounds_per_noise_terms, noise_terms))
+        results.append((box_id, mapper_result, noise_terms))
 
         if not backwards:
             # NOTE: we unroll the BoxOp immediately to allow gates contained within the box be
@@ -224,7 +224,8 @@ def compute_bounds(
                 _handle_circuit_instruction(inst)
 
     comm_norms: Bounds = {}
-    for box_id, bounds_per_noise_terms, noise_terms in results:
+    for box_id, mapper_result, noise_terms in results:
+        bounds_per_noise_terms = mapper_result if pool is None else mapper_result.get()
         comm_norms_this_box = []
         for bound in bounds_per_noise_terms:
             comm_norms_this_box.append(bound.min())
