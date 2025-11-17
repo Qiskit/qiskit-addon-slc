@@ -163,6 +163,7 @@ def compute_bounds(
             )
 
     results = []
+    all_noise_terms = {}
     pool = mp.Pool(num_processes)
 
     timed_out = False
@@ -216,11 +217,14 @@ def compute_bounds(
                 rot_gates.gates[::-1], rot_gates.qargs[::-1], rot_gates.thetas[::-1]
             ),
         )
-        job_args = [pauli.to_pauli() for pauli in local_noise_terms]
 
-        mapper_result = pool.map_async(norm_fn, job_args)
-
-        results.append((box_id, mapper_result, noise_terms))
+        all_noise_terms[box_id] = noise_terms
+        # PERF: using map_async would be more performant than apply_async for each term
+        # individually. But that would imply we are still forced to process all layers as a whole
+        # and cannot process individual terms.
+        for pauli_idx, pauli in enumerate(local_noise_terms):
+            async_res = pool.apply_async(norm_fn, [pauli.to_pauli()])
+            results.append((box_id, pauli_idx, async_res))
 
         if not backwards:
             # NOTE: we unroll the BoxOp immediately to allow gates contained within the box be
@@ -228,13 +232,15 @@ def compute_bounds(
             for inst in circ_inst.operation.body[::-1]:
                 _handle_circuit_instruction(inst)
 
-    comm_norms: Bounds = {}
-    for box_id, mapper_result, noise_terms in results:
-        bounds_per_noise_terms = mapper_result if pool is None else mapper_result.get()
+    rates = {box_id: np.zeros(len(noise_terms)) for box_id, noise_terms in all_noise_terms.items()}
+    for box_id, pauli_idx, async_res in results:
+        bound = async_res.get()
+        rates[box_id][pauli_idx] = bound.min()
 
-        comm_norms[box_id] = PauliLindbladMap.from_components(
-            np.asarray([bound.min() for bound in bounds_per_noise_terms]), noise_terms
-        )
+    comm_norms: Bounds = {
+        box_id: PauliLindbladMap.from_components(rates[box_id], noise_terms)
+        for box_id, noise_terms in all_noise_terms.items()
+    }
 
     pool.close()
 
