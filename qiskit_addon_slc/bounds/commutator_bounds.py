@@ -119,8 +119,7 @@ def compute_bounds(
     """
     LOGGER.debug(f"Using {num_processes} processes")
     pool = mp.Pool(num_processes) if num_processes > 1 else None
-
-    comm_norms: Bounds = {}
+    starmapper = itertools if pool is None else pool
 
     net_clifford = Clifford.from_label("I" * circuit.num_qubits)
     rot_gates = RotationGates([], [], [])
@@ -158,6 +157,8 @@ def compute_bounds(
             rot_gates.append_circuit_instruction(
                 instruction, qargs, circuit.num_qubits, clifford=net_clifford
             )
+
+    results = []
 
     timed_out = False
     start = time.time()
@@ -212,9 +213,18 @@ def compute_bounds(
         )
         job_args = [(pauli.to_pauli(),) for pauli in local_noise_terms]
 
-        starmapper = itertools if pool is None else pool
         bounds_per_noise_terms = starmapper.starmap(norm_fn, job_args)
 
+        results.append((box_id, bounds_per_noise_terms, noise_terms))
+
+        if not backwards:
+            # NOTE: we unroll the BoxOp immediately to allow gates contained within the box be
+            # pruned by the LightCone pass
+            for inst in circ_inst.operation.body[::-1]:
+                _handle_circuit_instruction(inst)
+
+    comm_norms: Bounds = {}
+    for box_id, bounds_per_noise_terms, noise_terms in results:
         comm_norms_this_box = []
         for bound in bounds_per_noise_terms:
             comm_norms_this_box.append(bound.min())
@@ -222,11 +232,5 @@ def compute_bounds(
         comm_norms[box_id] = PauliLindbladMap.from_components(
             np.asarray(comm_norms_this_box), noise_terms
         )
-
-        if not backwards:
-            # NOTE: we unroll the BoxOp immediately to allow gates contained within the box be
-            # pruned by the LightCone pass
-            for inst in circ_inst.operation.body[::-1]:
-                _handle_circuit_instruction(inst)
 
     return comm_norms
