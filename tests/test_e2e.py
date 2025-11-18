@@ -44,8 +44,6 @@ from samplomatic.utils import find_unique_box_instructions
 RANDOM_SEED = 42
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(module)s %(message)s")
 
-multiprocessing.set_start_method("spawn")
-
 
 def _construct_trotter_circuit(
     num_qubits: int,
@@ -223,4 +221,5 @@ def test_e2e(use_clifford: bool):
 
 
 if __name__ == "__main__":
+    multiprocessing.set_start_method("spawn")
     test_e2e(use_clifford=True)

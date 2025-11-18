@@ -169,9 +169,10 @@ def compute_bounds(
         gathered_bounds[box_id][0][rate_idx] = bound.min()
 
     pool = mp.Pool(num_processes)
-    tasks = []
+    tasks = set()
 
     start = time.time()
+    LOGGER.info("Starting to spawn bound computation tasks")
 
     for circ_inst, qargs, box_id, noise_id in iter_circuit(circuit, reverse=True):
         if box_id is None:
@@ -221,7 +222,7 @@ def compute_bounds(
                 [pauli],
                 callback=partial(_insert_rate, box_id=box_id, rate_idx=pauli_idx),
             )
-            tasks.append(task)
+            tasks.add(task)
 
         if not backwards:
             # NOTE: we unroll the BoxOp immediately to allow gates contained within the box be
@@ -229,21 +230,31 @@ def compute_bounds(
             for inst in circ_inst.operation.body[::-1]:
                 _handle_circuit_instruction(inst)
 
-    if timeout is None:
-        # we simply clear the task list causing the loop below to close the pool for us
-        tasks = []
+    total_num_tasks = len(tasks)
+    LOGGER.info(f"Total number of spawned tasks: {total_num_tasks}")
 
-    for task in tasks:
-        if task.ready():
-            continue
-        time_spent = time.time() - start
-        time_left = cast(float, timeout) - time_spent
-        task.wait(time_left)
-        if not task.ready():
+    progress_polling_rate = 1
+    len_progress_indicator = 50
+    per_progress_char = total_num_tasks // len_progress_indicator
+
+    while tasks:
+        next(iter(tasks)).wait(progress_polling_rate)
+        tasks = {t for t in tasks if not t.ready()}
+        completed = total_num_tasks - len(tasks)
+        progress = "." * (completed // per_progress_char)
+        LOGGER.info(
+            f"Progress: {progress:{len_progress_indicator}} [{completed}/{total_num_tasks}]"
+        )
+        if timeout is not None and (time.time() - start) > timeout:
+            LOGGER.warning(f"Reached user-specified time out of {timeout} seconds!")
             pool.terminate()
             break
     else:
         pool.close()
+
+    tasks = {t for t in tasks if not t.ready()}
+    completed = total_num_tasks - len(tasks)
+    LOGGER.info(f"Successfully completed [{completed}/{total_num_tasks}] tasks!")
 
     pool.join()
 
