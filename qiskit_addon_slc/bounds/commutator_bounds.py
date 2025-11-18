@@ -241,9 +241,11 @@ def compute_bounds(
         next(iter(tasks)).wait(progress_polling_rate)
         tasks = {t for t in tasks if not t.ready()}
         completed = total_num_tasks - len(tasks)
+        perc = (completed / total_num_tasks) * 100
         progress = "." * (completed // per_progress_char)
         LOGGER.info(
-            f"Progress: {progress:{len_progress_indicator}} [{completed}/{total_num_tasks}]"
+            f"Progress: {progress:{len_progress_indicator}} "
+            f"[{completed}/{total_num_tasks}] {perc:.1f}%"
         )
         if timeout is not None and (time.time() - start) > timeout:
             LOGGER.warning(f"Reached user-specified time out of {timeout} seconds!")
