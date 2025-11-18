@@ -23,7 +23,7 @@ import multiprocessing as mp
 import time
 from collections.abc import Callable
 from functools import partial
-from typing import NamedTuple, cast
+from typing import NamedTuple
 
 import numpy as np
 from pauli_prop.propagation import (
