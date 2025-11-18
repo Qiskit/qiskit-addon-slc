@@ -237,22 +237,26 @@ def compute_bounds(
     len_progress_indicator = 50
     per_progress_char = total_num_tasks // len_progress_indicator
 
-    while tasks:
-        next(iter(tasks)).wait(progress_polling_rate)
-        tasks = {t for t in tasks if not t.ready()}
-        completed = total_num_tasks - len(tasks)
-        perc = (completed / total_num_tasks) * 100
-        progress = "." * (completed // per_progress_char)
-        LOGGER.info(
-            f"Progress: {progress:{len_progress_indicator}} "
-            f"[{completed}/{total_num_tasks}] {perc:.1f}%"
-        )
-        if timeout is not None and (time.time() - start) > timeout:
-            LOGGER.warning(f"Reached user-specified time out of {timeout} seconds!")
-            pool.terminate()
-            break
-    else:
-        pool.close()
+    try:
+        while tasks:
+            next(iter(tasks)).wait(progress_polling_rate)
+            tasks = {t for t in tasks if not t.ready()}
+            completed = total_num_tasks - len(tasks)
+            perc = (completed / total_num_tasks) * 100
+            progress = "." * (completed // per_progress_char)
+            LOGGER.info(
+                f"Progress: {progress:{len_progress_indicator}} "
+                f"[{completed}/{total_num_tasks}] {perc:.1f}%"
+            )
+            if timeout is not None and (time.time() - start) > timeout:
+                LOGGER.warning(f"Reached user-specified time out of {timeout} seconds!")
+                pool.terminate()
+                break
+        else:
+            pool.close()
+    except KeyboardInterrupt:
+        LOGGER.warning("Caught KeyboardInterrupt! Terminating pending bound computations.")
+        pool.terminate()
 
     tasks = {t for t in tasks if not t.ready()}
     completed = total_num_tasks - len(tasks)
