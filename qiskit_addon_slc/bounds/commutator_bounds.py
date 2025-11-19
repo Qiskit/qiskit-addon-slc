@@ -213,9 +213,6 @@ def compute_bounds(
             ),
         )
 
-        # PERF: using map_async would be more performant than apply_async for each term
-        # individually. But that would imply we are still forced to process all layers as a whole
-        # and cannot process individual terms.
         for pauli_idx, pauli in enumerate(local_noise_terms.to_pauli_list()):
             task = pool.apply_async(
                 norm_fn,
