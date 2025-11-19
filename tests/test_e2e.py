@@ -19,7 +19,6 @@
 from __future__ import annotations
 
 import logging
-import multiprocessing
 import pickle
 import random
 from itertools import count
@@ -121,7 +120,6 @@ def test_e2e(use_clifford: bool):
         eigval_max_qubits=20,
         evolution_max_terms=1000,
         atol=1e-18,
-        num_processes=8,
     )
 
     forward_tightened_bounds = tighten_with_speed_limit(
@@ -129,10 +127,7 @@ def test_e2e(use_clifford: bool):
     )
 
     backward_bounds = compute_backward_bounds(
-        boxed_circuit,
-        noise_model_paulis,
-        evolution_max_terms=2000,
-        num_processes=8,
+        boxed_circuit, noise_model_paulis, evolution_max_terms=2000
     )
 
     # NOTE: here one would get the the noise model rates from the NoiseLearner
@@ -221,5 +216,4 @@ def test_e2e(use_clifford: bool):
 
 
 if __name__ == "__main__":
-    multiprocessing.set_start_method("spawn")
     test_e2e(use_clifford=True)
