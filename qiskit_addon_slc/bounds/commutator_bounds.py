@@ -102,6 +102,10 @@ def compute_bounds(
     the light-cone of the observable (initialized by ``light_cone``). These computed bounds form the
     basis of the shaded light-cone.
 
+    Since this function performs a long-running computation, it gracefully handles
+    ``KeyboardInterrupt`` exceptions, allowing the user to interrupt the computation at an arbitrary
+    point in time and still obtain the results that have been comuted up to that point.
+
     Args:
         circuit: the target circuit.
         noise_model_paulis: the Pauli error terms to consider for each noise model.
