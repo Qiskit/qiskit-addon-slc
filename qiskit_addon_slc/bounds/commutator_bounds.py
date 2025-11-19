@@ -119,13 +119,7 @@ def compute_bounds(
 
     Returns:
         The computed unequal time commutator bounds.
-
-    Raises:
-        ValueError: if ``num_processes`` is lower than 1.
     """
-    if num_processes < 1:
-        raise ValueError("Cannot use fewer than 1 processes!")
-
     LOGGER.debug(f"Using {num_processes} processes")
 
     net_clifford = Clifford.from_label("I" * circuit.num_qubits)
