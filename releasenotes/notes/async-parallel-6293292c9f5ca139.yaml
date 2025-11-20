@@ -1,0 +1,13 @@
+---
+features:
+  - |
+    The parallelization of the forward and backward unequal time commutator bound
+    computation has been reworked internally. As a result, long-running single
+    tasks no longer cause other tasks to idle until the next circuit layer can
+    be processed but instead all processes remain utilized at all times.
+    Consequently, the perceived time-to-completion has shortened considerably
+    when running with many parallel processes.
+
+    In addition to the above, a user may now use a ``KeyboardInterrupt`` signal
+    to terminate the bound computation manually, which will be handled gracefully
+    and preserves all results computed thus far.
