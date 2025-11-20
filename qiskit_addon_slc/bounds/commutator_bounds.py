@@ -104,7 +104,7 @@ def compute_bounds(
 
     Since this function performs a long-running computation, it gracefully handles
     ``KeyboardInterrupt`` exceptions, allowing the user to interrupt the computation at an arbitrary
-    point in time and still obtain the results that have been comuted up to that point.
+    point in time and still obtain the results that have been computed up to that point.
 
     Args:
         circuit: the target circuit.
