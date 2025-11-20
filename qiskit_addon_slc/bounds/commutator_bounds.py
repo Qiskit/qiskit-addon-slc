@@ -18,7 +18,6 @@
 
 from __future__ import annotations
 
-import itertools
 import logging
 import multiprocessing as mp
 import time
@@ -84,29 +83,6 @@ class CommutatorBounds(NamedTuple):
         return min(self.commutator_bound + self.truncation_bias, 2.0)
 
 
-def _get_norms_for_box_terms(
-    error_paulis: QubitSparsePauliList,
-    norm_fn: Callable[[Pauli], CommutatorBounds],
-    pool: mp.pool.Pool | None,
-) -> list[CommutatorBounds]:
-    """A utility function which handles the parallelized computation of the commutator bounds.
-
-    Args:
-        error_paulis: the Pauli error terms whose bounds to compute.
-        norm_fn: the function that computes the desired bound.
-        pool: an optional pool of workers for parallelized execution.
-
-    Returns:
-        The computed bounds as returned by ``norm_fn`` for the ``error_paulis`` **in order**.
-    """
-    job_args = [(pauli.to_pauli(),) for pauli in error_paulis]
-
-    starmapper = itertools if pool is None else pool
-    results = starmapper.starmap(norm_fn, job_args)
-
-    return results
-
-
 def compute_bounds(
     circuit: QuantumCircuit,
     noise_model_paulis: dict[str, QubitSparsePauliList],
@@ -126,6 +102,10 @@ def compute_bounds(
     the light-cone of the observable (initialized by ``light_cone``). These computed bounds form the
     basis of the shaded light-cone.
 
+    Since this function performs a long-running computation, it gracefully handles
+    ``KeyboardInterrupt`` exceptions, allowing the user to interrupt the computation at an arbitrary
+    point in time and still obtain the results that have been computed up to that point.
+
     Args:
         circuit: the target circuit.
         noise_model_paulis: the Pauli error terms to consider for each noise model.
@@ -141,9 +121,6 @@ def compute_bounds(
         The computed unequal time commutator bounds.
     """
     LOGGER.debug(f"Using {num_processes} processes")
-    pool = mp.Pool(num_processes) if num_processes > 1 else None
-
-    comm_norms: Bounds = {}
 
     net_clifford = Clifford.from_label("I" * circuit.num_qubits)
     rot_gates = RotationGates([], [], [])
@@ -182,29 +159,29 @@ def compute_bounds(
                 instruction, qargs, circuit.num_qubits, clifford=net_clifford
             )
 
-    timed_out = False
+    gathered_bounds: dict[str, tuple[np.ndarray, QubitSparsePauliList]] = {}
+
+    def _insert_rate(bound: CommutatorBounds, box_id: str, rate_idx: int) -> None:
+        nonlocal gathered_bounds
+
+        gathered_bounds[box_id][0][rate_idx] = bound.min()
+
+    pool = mp.Pool(num_processes)
+    tasks = set()
+
     start = time.time()
+    LOGGER.info("Starting to spawn bound computation tasks")
+
     for circ_inst, qargs, box_id, noise_id in iter_circuit(circuit, reverse=True):
-        if not timed_out and timeout is not None:
-            timed_out = time.time() - start > timeout
-            if timed_out:
-                LOGGER.warning("Bounds computation timed out.")
-
-        if noise_id is not None:
-            noise_terms: QubitSparsePauliList = noise_model_paulis[noise_id]
-
-        if timed_out:
-            if box_id is not None:
-                # once timeout is reached, fill with trivial bound of 2
-                comm_norms[box_id] = PauliLindbladMap.from_components(
-                    np.full(len(noise_terms), 2.0),
-                    noise_terms,
-                )
-            continue
-
         if box_id is None:
             _handle_circuit_instruction(circ_inst)
             continue
+
+        # NOTE: we know for a fact that noise_id can only be None when box_id is None
+        assert noise_id is not None
+
+        noise_terms: QubitSparsePauliList = noise_model_paulis[noise_id]
+        gathered_bounds[box_id] = (np.full(len(noise_terms), 2.0), noise_terms)
 
         if backwards:
             # NOTE: we unroll the BoxOp immediately to allow gates contained within the box be
@@ -227,24 +204,20 @@ def compute_bounds(
             circuit.num_qubits,
         )
 
-        bounds_per_noise_terms = _get_norms_for_box_terms(
-            error_paulis=local_noise_terms,
-            norm_fn=partial(  # type: ignore[call-arg]
-                norm_fn,
-                gates=RotationGates(
-                    rot_gates.gates[::-1], rot_gates.qargs[::-1], rot_gates.thetas[::-1]
-                ),
+        norm_fn = partial(  # type: ignore[call-arg]
+            norm_fn,
+            gates=RotationGates(
+                rot_gates.gates[::-1], rot_gates.qargs[::-1], rot_gates.thetas[::-1]
             ),
-            pool=pool,
         )
 
-        comm_norms_this_box = []
-        for bound in bounds_per_noise_terms:
-            comm_norms_this_box.append(bound.min())
-
-        comm_norms[box_id] = PauliLindbladMap.from_components(
-            np.asarray(comm_norms_this_box), noise_terms
-        )
+        for pauli_idx, pauli in enumerate(local_noise_terms.to_pauli_list()):
+            task = pool.apply_async(
+                norm_fn,
+                [pauli],
+                callback=partial(_insert_rate, box_id=box_id, rate_idx=pauli_idx),
+            )
+            tasks.add(task)
 
         if not backwards:
             # NOTE: we unroll the BoxOp immediately to allow gates contained within the box be
@@ -252,4 +225,42 @@ def compute_bounds(
             for inst in circ_inst.operation.body[::-1]:
                 _handle_circuit_instruction(inst)
 
+    total_num_tasks = len(tasks)
+    LOGGER.info(f"Total number of spawned tasks: {total_num_tasks}")
+
+    progress_polling_rate = 1
+    len_progress_indicator = 50
+    per_progress_char = total_num_tasks // len_progress_indicator
+
+    try:
+        while tasks:
+            next(iter(tasks)).wait(progress_polling_rate)
+            tasks = {t for t in tasks if not t.ready()}
+            completed = total_num_tasks - len(tasks)
+            perc = (completed / total_num_tasks) * 100
+            progress = "." * (completed // per_progress_char)
+            LOGGER.info(
+                f"Progress: {progress:{len_progress_indicator}} "
+                f"[{completed}/{total_num_tasks}] {perc:.1f}%"
+            )
+            if timeout is not None and (time.time() - start) > timeout:
+                LOGGER.warning(f"Reached user-specified time out of {timeout} seconds!")
+                pool.terminate()
+                break
+        else:
+            pool.close()
+    except KeyboardInterrupt:
+        LOGGER.warning("Caught KeyboardInterrupt! Terminating pending bound computations.")
+        pool.terminate()
+
+    tasks = {t for t in tasks if not t.ready()}
+    completed = total_num_tasks - len(tasks)
+    LOGGER.info(f"Successfully completed [{completed}/{total_num_tasks}] tasks!")
+
+    pool.join()
+
+    comm_norms: Bounds = {
+        box_id: PauliLindbladMap.from_components(bounds[0], bounds[1])
+        for box_id, bounds in gathered_bounds.items()
+    }
     return comm_norms

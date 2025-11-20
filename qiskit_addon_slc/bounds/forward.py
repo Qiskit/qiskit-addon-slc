@@ -176,7 +176,7 @@ def time_evolved_norm_forward(
     if success:
         comm_norm = np.abs(comm_norm)
         if comm_norm - 2.0 > WARNING_TOL:
-            LOGGER.info(
+            LOGGER.debug(
                 f"Solver found comm norm {comm_norm:.6f} > {2.0 + WARNING_TOL} for Pauli error "
                 f"{orig!s}."
             )
