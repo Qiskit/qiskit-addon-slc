@@ -20,6 +20,8 @@
 
 This module provides visualization methods for shaded lightcones.
 
+.. autofunction:: animate_shaded_lightcone
+
 .. autofunction:: draw_shaded_lightcone
 
 .. autofunction:: accumulate_filtered_bounds
@@ -37,6 +39,7 @@ from qiskit.quantum_info import Pauli, QubitSparsePauliList
 
 from ..bounds.commutator_bounds import Bounds
 from .accumulate_filtered_bounds import accumulate_filtered_bounds
+from .animate_shaded_lightcone import animate_shaded_lightcone
 from .overlay_bounds import overlay_bounds_onto_circuit
 from .render_bounds import render_bounds
 
@@ -78,6 +81,7 @@ def draw_shaded_lightcone(
 
 __all__ = [
     "accumulate_filtered_bounds",
+    "animate_shaded_lightcone",
     "draw_shaded_lightcone",
     "overlay_bounds_onto_circuit",
     "render_bounds",
