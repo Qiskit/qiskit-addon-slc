@@ -46,6 +46,12 @@ jobs:
           cd qiskit-ibm-runtime
           git rev-parse HEAD
           python -m build --wheel
+      - name: Build samplomatic development wheel
+        run: |
+          git clone https://github.com/Qiskit/samplomatic
+          cd samplomatic
+          git rev-parse HEAD
+          python -m build --wheel
       - name: Build qiskit-addon-utils development wheel
         run: |
           git clone https://github.com/Qiskit/qiskit-addon-utils
@@ -60,6 +66,7 @@ jobs:
           extremal-python-dependencies pin-dependencies --inplace
           "qiskit @ file:$(echo qiskit/dist/*.whl)"
           "qiskit-ibm-runtime @ file:$(echo qiskit-ibm-runtime/dist/*.whl)"
+          "samplomatic @ file:$(echo samplomatic/dist/*.whl)"
           "qiskit-addon-utils @ file:$(echo qiskit-addon-utils/dist/*.whl)"
       - name: Test using tox environment
         run: |
