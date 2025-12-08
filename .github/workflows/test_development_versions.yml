@@ -46,6 +46,12 @@ jobs:
           cd qiskit-ibm-runtime
           git rev-parse HEAD
           python -m build --wheel
+      - name: Build samplomatic development wheel
+        run: |
+          git clone https://github.com/Qiskit/samplomatic
+          cd samplomatic
+          git rev-parse HEAD
+          python -m build --wheel
       - name: Build qiskit-addon-utils development wheel
         run: |
           git clone https://github.com/Qiskit/qiskit-addon-utils
