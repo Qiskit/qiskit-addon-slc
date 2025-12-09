@@ -51,7 +51,9 @@ def test_noise_model_paulis(subtests, num_qubits: int) -> None:
         circ.cx(idx - 1, idx)
 
     boxes_pm = generate_boxing_pass_manager(
-        inject_noise_targets="all", inject_noise_strategy="individual_modification"
+        inject_noise_targets="all",
+        inject_noise_strategy="individual_modification",
+        twirling_strategy="active",
     )
     boxed_circ = boxes_pm.run(circ)
 
@@ -120,7 +122,9 @@ def test_noise_model_paulis_with_backend(subtests) -> None:
     isa_circ = preset_pm.run(circ)
 
     boxes_pm = generate_boxing_pass_manager(
-        inject_noise_targets="all", inject_noise_strategy="individual_modification"
+        inject_noise_targets="all",
+        inject_noise_strategy="individual_modification",
+        twirling_strategy="active",
     )
     boxed_circ = boxes_pm.run(isa_circ)
 
