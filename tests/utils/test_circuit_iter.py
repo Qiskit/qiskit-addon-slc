@@ -46,7 +46,9 @@ def test_circuit_iter() -> None:
     AddInjectNoise._MODIFIER_REF_COUNTER = count()
 
     boxes_pm = generate_boxing_pass_manager(
-        inject_noise_targets="all", inject_noise_strategy="individual_modification"
+        inject_noise_targets="all",
+        inject_noise_strategy="individual_modification",
+        twirling_strategy="active",
     )
     boxed_circ = boxes_pm.run(circ)
 
