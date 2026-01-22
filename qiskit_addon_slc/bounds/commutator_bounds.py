@@ -252,4 +252,45 @@ def compute_bounds(
             for inst in circ_inst.operation.body[::-1]:
                 _handle_circuit_instruction(inst)
 
+<<<<<<< HEAD
+=======
+    total_num_tasks = len(tasks)
+    LOGGER.info(f"Total number of spawned tasks: {total_num_tasks}")
+
+    progress_polling_rate = 1
+    len_progress_indicator = 50
+    per_progress_char = total_num_tasks / len_progress_indicator
+
+    try:
+        while tasks:
+            next(iter(tasks)).wait(progress_polling_rate)
+            tasks = {t for t in tasks if not t.ready()}
+            completed = total_num_tasks - len(tasks)
+            perc = (completed / total_num_tasks) * 100
+            progress = "." * int(completed / per_progress_char)
+            LOGGER.info(
+                f"Progress: {progress:{len_progress_indicator}} "
+                f"[{completed}/{total_num_tasks}] {perc:.1f}%"
+            )
+            if timeout is not None and (time.time() - start) > timeout:
+                LOGGER.warning(f"Reached user-specified time out of {timeout} seconds!")
+                pool.terminate()
+                break
+        else:
+            pool.close()
+    except KeyboardInterrupt:
+        LOGGER.warning("Caught KeyboardInterrupt! Terminating pending bound computations.")
+        pool.terminate()
+
+    tasks = {t for t in tasks if not t.ready()}
+    completed = total_num_tasks - len(tasks)
+    LOGGER.info(f"Successfully completed [{completed}/{total_num_tasks}] tasks!")
+
+    pool.join()
+
+    comm_norms: Bounds = {
+        box_id: PauliLindbladMap.from_components(bounds[0], bounds[1])
+        for box_id, bounds in gathered_bounds.items()
+    }
+>>>>>>> c85427c (fix div-by-zero for small circuit (#30))
     return comm_norms
