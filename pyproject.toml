@@ -71,7 +71,7 @@ lint = [
 notebook-dependencies = [
     "qiskit-addon-slc",
     "qiskit-addon-utils>=0.3.0",
-    "qiskit-ibm-runtime @ git+https://github.com/Qiskit/qiskit-ibm-runtime.git@executor_preview",
+    "qiskit-ibm-runtime @ git+https://github.com/Qiskit/qiskit-ibm-runtime.git",
 ]
 docs = [
     "qiskit-addon-slc[doctest]",
