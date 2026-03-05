@@ -31,7 +31,7 @@ dependencies = [
     "qiskit[visualization]>=2.2, <3",
     "pauli-prop~=0.1.0",
     "rustworkx",
-    "samplomatic>=0.10.1"
+    "samplomatic>=0.16.0"
 ]
 
 [project.optional-dependencies]
@@ -71,7 +71,7 @@ lint = [
 notebook-dependencies = [
     "qiskit-addon-slc",
     "qiskit-addon-utils>=0.3.0",
-    "qiskit-ibm-runtime @ git+https://github.com/Qiskit/qiskit-ibm-runtime.git@executor_preview",
+    "qiskit-ibm-runtime @ git+https://github.com/Qiskit/qiskit-ibm-runtime.git",
 ]
 docs = [
     "qiskit-addon-slc[doctest]",
@@ -182,3 +182,4 @@ convention = "google"
 
 [tool.typos.default.extend-words]
 arange = "arange"
+CPY = "CPY"

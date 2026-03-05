@@ -67,6 +67,9 @@ def test_circuit_iter() -> None:
 
     iterator_data = list(iter_circuit(full_circ))
 
+    ref1 = iterator_data[-1][-1]
+    ref0 = iterator_data[-2][-1]
+
     expected_data: tuple[CircuitInstruction, list[int], str | None, str | None] = []
     for idx in range(num_qubits):
         expected_data.append(
@@ -86,10 +89,10 @@ def test_circuit_iter() -> None:
                 None,
             )
         )
-    expected_data.append((boxed_circ.data[0], [0, 1, 2, 3, 4, 5], "m0", "r0"))
-    expected_data.append((boxed_circ.data[1], [1, 2, 3, 4], "m1", "r1"))
-    expected_data.append((boxed_circ.data[2], [0, 1, 2, 3, 4, 5], "m2", "r0"))
-    expected_data.append((boxed_circ.data[3], [1, 2, 3, 4], "m3", "r1"))
+    expected_data.append((boxed_circ.data[0], [0, 1, 2, 3, 4, 5], "m0", ref0))
+    expected_data.append((boxed_circ.data[1], [1, 2, 3, 4], "m1", ref1))
+    expected_data.append((boxed_circ.data[2], [0, 1, 2, 3, 4, 5], "m2", ref0))
+    expected_data.append((boxed_circ.data[3], [1, 2, 3, 4], "m3", ref1))
 
     for actual, expected in zip(iterator_data, expected_data, strict=True):
         assert actual == expected
