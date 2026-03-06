@@ -70,6 +70,21 @@ class LightCone(NamedTuple):
         commutes_bool = True
         # Check commutation with all previous operations
         for op in self.operations:
+            if op[0].name == "pauli":
+                # PERF: When the operation stored inside the LightCone is a Pauli, we know how to
+                # reduce its size to consider only those qubits that actually overlap with the
+                # (presumably) low-qubit-count gate (here, the input `inst`). This allows us to make
+                # much more efficient commutation checks.
+                reduced_pauli = []
+                reduced_qubits = []
+                for pauli, qb in zip(op[0].params[0], op[1][::-1], strict=True):
+                    if qb in inst.qubits:
+                        reduced_pauli.append(pauli)
+                        reduced_qubits.append(qb)
+
+                reduced_inst = PauliGate("".join(reduced_pauli))
+                op = (reduced_inst, reduced_qubits[::-1])
+
             max_num_qubits = max(len(op[1]), len(inst.qubits))
             if max_num_qubits > 10:
                 LOGGER.warning(
