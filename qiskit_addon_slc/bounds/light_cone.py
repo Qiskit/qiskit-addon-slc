@@ -77,13 +77,13 @@ class LightCone(NamedTuple):
                 # much more efficient commutation checks.
                 reduced_pauli = []
                 reduced_qubits = []
-                for pauli, qb in zip(op[0].params[0], op[1], strict=True):
+                for pauli, qb in zip(op[0].params[0], op[1][::-1], strict=True):
                     if qb in inst.qubits:
                         reduced_pauli.append(pauli)
                         reduced_qubits.append(qb)
 
-                reduced_inst = Instruction("pauli", len(reduced_pauli), 0, "".join(reduced_pauli))
-                op = (reduced_inst, reduced_qubits)
+                reduced_inst = PauliGate("".join(reduced_pauli))
+                op = (reduced_inst, reduced_qubits[::-1])
 
             max_num_qubits = max(len(op[1]), len(inst.qubits))
             if max_num_qubits > 10:
