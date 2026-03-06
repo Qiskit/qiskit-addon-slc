@@ -46,7 +46,9 @@ def test_circuit_iter() -> None:
     AddInjectNoise._MODIFIER_REF_COUNTER = count()
 
     boxes_pm = generate_boxing_pass_manager(
-        inject_noise_targets="all", inject_noise_strategy="individual_modification"
+        inject_noise_targets="all",
+        inject_noise_strategy="individual_modification",
+        twirling_strategy="active",
     )
     boxed_circ = boxes_pm.run(circ)
 
@@ -64,6 +66,9 @@ def test_circuit_iter() -> None:
     full_circ = pre_circ.compose(boxed_circ)
 
     iterator_data = list(iter_circuit(full_circ))
+
+    ref1 = iterator_data[-1][-1]
+    ref0 = iterator_data[-2][-1]
 
     expected_data: tuple[CircuitInstruction, list[int], str | None, str | None] = []
     for idx in range(num_qubits):
@@ -84,10 +89,10 @@ def test_circuit_iter() -> None:
                 None,
             )
         )
-    expected_data.append((boxed_circ.data[0], [0, 1, 2, 3, 4, 5], "m0", "r0"))
-    expected_data.append((boxed_circ.data[1], [1, 2, 3, 4], "m1", "r1"))
-    expected_data.append((boxed_circ.data[2], [0, 1, 2, 3, 4, 5], "m2", "r0"))
-    expected_data.append((boxed_circ.data[3], [1, 2, 3, 4], "m3", "r1"))
+    expected_data.append((boxed_circ.data[0], [0, 1, 2, 3, 4, 5], "m0", ref0))
+    expected_data.append((boxed_circ.data[1], [1, 2, 3, 4], "m1", ref1))
+    expected_data.append((boxed_circ.data[2], [0, 1, 2, 3, 4, 5], "m2", ref0))
+    expected_data.append((boxed_circ.data[3], [1, 2, 3, 4], "m3", ref1))
 
     for actual, expected in zip(iterator_data, expected_data, strict=True):
         assert actual == expected

@@ -32,7 +32,7 @@ dependencies = [
     "qiskit[visualization]>=2.2, <3",
     "pauli-prop~=0.1.0",
     "rustworkx",
-    "samplomatic>=0.10.1"
+    "samplomatic>=0.16.0"
 ]
 
 [project.optional-dependencies]
@@ -58,21 +58,21 @@ nbtest = [
     "nbmake>=1.5.0",
 ]
 style = [
-    "ruff==0.14.3",
+    "ruff==0.15.4",
     "nbqa>=1.8.5",
     "typos>=1.20.0",
 ]
 lint = [
     "qiskit-addon-slc[style]",
-    "mypy==1.18.2",
-    "pylint==4.0.2",
+    "mypy==1.19.1",
+    "pylint==4.0.5",
     "reno>=4.1",
     "toml>=0.9.6",
 ]
 notebook-dependencies = [
     "qiskit-addon-slc",
     "qiskit-addon-utils>=0.3.0",
-    "qiskit-ibm-runtime @ git+https://github.com/Qiskit/qiskit-ibm-runtime.git@executor_preview",
+    "qiskit-ibm-runtime @ git+https://github.com/Qiskit/qiskit-ibm-runtime.git",
 ]
 docs = [
     "qiskit-addon-slc[doctest]",
@@ -183,3 +183,4 @@ convention = "google"
 
 [tool.typos.default.extend-words]
 arange = "arange"
+CPY = "CPY"

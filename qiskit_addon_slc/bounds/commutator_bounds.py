@@ -230,7 +230,7 @@ def compute_bounds(
 
     progress_polling_rate = 1
     len_progress_indicator = 50
-    per_progress_char = total_num_tasks // len_progress_indicator
+    per_progress_char = total_num_tasks / len_progress_indicator
 
     try:
         while tasks:
@@ -238,7 +238,7 @@ def compute_bounds(
             tasks = {t for t in tasks if not t.ready()}
             completed = total_num_tasks - len(tasks)
             perc = (completed / total_num_tasks) * 100
-            progress = "." * (completed // per_progress_char)
+            progress = "." * int(completed / per_progress_char)
             LOGGER.info(
                 f"Progress: {progress:{len_progress_indicator}} "
                 f"[{completed}/{total_num_tasks}] {perc:.1f}%"

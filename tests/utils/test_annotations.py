@@ -18,34 +18,34 @@
 
 from __future__ import annotations
 
-from itertools import count
-
 from qiskit.circuit import QuantumCircuit
 from qiskit_addon_slc.utils.annotations import map_modifier_ref_to_ref
 from samplomatic.transpiler import generate_boxing_pass_manager
-from samplomatic.transpiler.passes import AddInjectNoise
 
 
 def test_noise_model_paulis() -> None:
     """Test parsing of the InjectNoise annotations."""
     num_qubits = 8
-    expected_map = {}
     circ = QuantumCircuit(num_qubits)
     # repeat layers some number times
-    for rep in range(4):
+    for _ in range(4):
         for first_qubit in range(2):
-            expected_map[f"m{rep * 2 + first_qubit}"] = f"r{first_qubit}"
             for idx in range(first_qubit + 1, num_qubits, 2):
                 circ.cx(idx - 1, idx)
 
-    # NOTE: we hack around the fact that we check against hard-coded annotation IDs by forcing the
-    # annotation counter to reset here. This should NOT be relied upon in the future.
-    AddInjectNoise._REF_COUNTER = count()
-    AddInjectNoise._MODIFIER_REF_COUNTER = count()
-
     boxes_pm = generate_boxing_pass_manager(
-        inject_noise_targets="all", inject_noise_strategy="individual_modification"
+        inject_noise_targets="all",
+        inject_noise_strategy="individual_modification",
+        twirling_strategy="active",
     )
     boxed_circ = boxes_pm.run(circ)
 
-    assert map_modifier_ref_to_ref(boxed_circ) == expected_map
+    actual_map = map_modifier_ref_to_ref(boxed_circ)
+
+    expected_map = {}
+    for mod_ref in ("m0", "m2", "m4", "m6"):
+        expected_map[mod_ref] = actual_map["m0"]
+    for mod_ref in ("m1", "m3", "m5", "m7"):
+        expected_map[mod_ref] = actual_map["m1"]
+
+    assert actual_map == expected_map
