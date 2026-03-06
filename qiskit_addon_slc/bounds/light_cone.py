@@ -24,7 +24,7 @@ from typing import NamedTuple
 
 import numpy as np
 from qiskit import QuantumCircuit
-from qiskit.circuit import CircuitInstruction, Gate, Instruction, Qubit
+from qiskit.circuit import CircuitInstruction, Gate, Qubit
 from qiskit.circuit.commutation_library import SessionCommutationChecker as scc
 from qiskit.circuit.library import PauliGate, ZGate
 from qiskit.converters import circuit_to_dag
