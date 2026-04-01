@@ -29,7 +29,7 @@ dependencies = [
     "matplotlib>=3.10.5, <4",
     "pyscf>=2.10, <3",
     "qiskit[visualization]>=2.2, <3",
-    "pauli-prop~=0.1.0",
+    "pauli-prop~=0.2.0",
     "rustworkx",
     "samplomatic>=0.16.0"
 ]
