@@ -75,7 +75,7 @@ def _time_evolved_norm_backward(
     """
     # Convert the single Pauli to a SparsePauliOp which we can then evolve
     pauli = SparsePauliOp(pauli)
-    atol = sys.float_info.epsilon # Machine precision of f64
+    atol = sys.float_info.epsilon  # Machine precision of f64
     pauli, trunc_onenorm = propagate_through_rotation_gates(
         operator=pauli,
         rot_gates=gates,
