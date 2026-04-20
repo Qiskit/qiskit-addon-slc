@@ -19,6 +19,7 @@
 from __future__ import annotations
 
 import logging
+import sys
 from functools import partial
 
 import numpy as np
@@ -74,11 +75,12 @@ def _time_evolved_norm_backward(
     """
     # Convert the single Pauli to a SparsePauliOp which we can then evolve
     pauli = SparsePauliOp(pauli)
+    atol = sys.float_info.epsilon # Machine precision of f64
     pauli, trunc_onenorm = propagate_through_rotation_gates(
         operator=pauli,
         rot_gates=gates,
         max_terms=evolution_max_terms,
-        atol=0,
+        atol=atol,
         frame="s",
     )
     trunc_bias = 2 * trunc_onenorm
