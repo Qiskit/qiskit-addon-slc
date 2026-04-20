@@ -198,6 +198,7 @@ def compute_forward_bounds(
     evolution_max_terms: int = 1_000_000,
     eigval_max_qubits: int = 14,
     atol: float = 1e-8,
+    max_num_boxes: int | None = None,
     num_processes: int = 1,
     timeout: float | None = None,
 ) -> Bounds:
@@ -226,6 +227,8 @@ def compute_forward_bounds(
             approximated via a simpler and more loose triangle inequality.
         atol: the absolute tolerance used for trimming terms from the commutator and for detecting
             convergence of the commutator's eigenvalue.
+        max_num_boxes: the maximum number of boxes for which to compute bounds. Bounds for any
+            additional boxes will be given the trivial upper bound value of :math:`2.0`.
         num_processes: the number of parallel processes to use.
         timeout: an optional timeout (in seconds) after which all remaining layers are filled with
             trivial numerical bounds of ``2.0``. Note, that this is not a strict timeout and the
@@ -276,6 +279,7 @@ def compute_forward_bounds(
         lc,
         norm_fn,
         backwards=False,
+        max_num_boxes=max_num_boxes,
         num_processes=num_processes,
         timeout=timeout,
     )
