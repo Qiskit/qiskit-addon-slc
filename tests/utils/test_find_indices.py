@@ -10,10 +10,6 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-# Warning: this module is not documented and it does not have an RST file.
-# If we ever publicly expose interfaces users can import from this module,
-# we should set up its RST file.
-
 """Tests for the ``find_indices`` utility."""
 
 from __future__ import annotations
