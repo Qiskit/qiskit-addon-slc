@@ -1,0 +1,7 @@
+---
+fixes:
+  - |
+    The pauli-propagation underlying the forward and backward-bound computations
+    has been adjusted to remove terms whose coefficients are numerically zero.
+    The truncation threshold to determine whether a term is numerically zero can
+    be adjusted via :attr:`qiskit_addon_slc.globals.ZERO_ATOL`.

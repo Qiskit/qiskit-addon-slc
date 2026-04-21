@@ -36,6 +36,7 @@ from qiskit.quantum_info import (
     SparsePauliOp,
 )
 
+from ..globals import ZERO_ATOL
 from ..utils import get_extremal_eigenvalue, remove_measure
 from .commutator_bounds import Bounds, CommutatorBounds, compute_bounds
 from .light_cone import LightCone
@@ -88,7 +89,7 @@ def time_evolved_norm_forward(
         operator=pauli,
         rot_gates=gates,
         max_terms=evolution_max_terms,
-        atol=0,
+        atol=ZERO_ATOL,
         frame="s",
     )
     trunc_bias = 2 * trunc_onenorm

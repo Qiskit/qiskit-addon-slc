@@ -19,7 +19,6 @@
 from __future__ import annotations
 
 import logging
-import sys
 from functools import partial
 
 import numpy as np
@@ -34,6 +33,7 @@ from qiskit.quantum_info import (
     SparsePauliOp,
 )
 
+from ..globals import ZERO_ATOL
 from ..utils import remove_measure
 from .commutator_bounds import Bounds, CommutatorBounds, compute_bounds
 from .light_cone import LightCone
@@ -75,12 +75,11 @@ def _time_evolved_norm_backward(
     """
     # Convert the single Pauli to a SparsePauliOp which we can then evolve
     pauli = SparsePauliOp(pauli)
-    atol = sys.float_info.epsilon  # Machine precision of f64
     pauli, trunc_onenorm = propagate_through_rotation_gates(
         operator=pauli,
         rot_gates=gates,
         max_terms=evolution_max_terms,
-        atol=atol,
+        atol=ZERO_ATOL,
         frame="s",
     )
     trunc_bias = 2 * trunc_onenorm
