@@ -105,12 +105,17 @@ def animate_shaded_lightcone(
     circuit: QuantumCircuit,
     bounds: Bounds,
     coupling_map: CouplingMap,
+    *,
     reverse: bool = False,
 ) -> go.Figure:
     """Animates a shaded lightcone.
 
+    This animation permits visualization of a shaded lightcone on top of a QPU's coupling map,
+    making interpretation of shaded lightcones easier for circuits that act on qubits with
+    connectivity higher than a 1D line.
+
     Args:
-        circuit: the circuit whose shaded lightcone to draw.
+        circuit: the circuit whose shaded lightcone to animate.
         bounds: the bounds to use for the shaded lightcone.
         coupling_map: the qubit connectivity map onto which to project the 1- and 2-weight bounds.
         reverse: whether to animate the circuit layers in reverse order.
