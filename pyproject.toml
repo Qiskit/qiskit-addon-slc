@@ -30,7 +30,7 @@ dependencies = [
     "plotly>=6.5.0, <7",
     "pyscf>=2.10, <3",
     "qiskit[visualization]>=2.2, <3",
-    "pauli-prop~=0.1.0",
+    "pauli-prop>=0.1.0, <1",
     "rustworkx",
     "samplomatic>=0.16.0"
 ]
@@ -58,13 +58,13 @@ nbtest = [
     "nbmake>=1.5.0",
 ]
 style = [
-    "ruff==0.15.4",
+    "ruff==0.15.8",
     "nbqa>=1.8.5",
     "typos>=1.20.0",
 ]
 lint = [
     "qiskit-addon-slc[style]",
-    "mypy==1.19.1",
+    "mypy==1.20.0",
     "pylint==4.0.5",
     "reno>=4.1",
     "toml>=0.9.6",
