@@ -52,6 +52,10 @@ class LightCone(NamedTuple):
     operations: list[tuple[Gate, list[Qubit]]]
     """The operations contained in the light cone."""
 
+    offset_cache: dict[tuple[str, tuple[float], tuple[Qubit]], int]
+    """A cache mapping circuit instructions to the offset in :attr:`.operations` up to which they
+    commute."""
+
     def commutes(self, inst: CircuitInstruction) -> bool:
         """Checks whether the provided instruction commutes with this light cone.
 
@@ -67,9 +71,12 @@ class LightCone(NamedTuple):
         if not self.qubits.intersection(inst.qubits):
             return True
 
+        cache_key = (inst.operation.name, tuple(inst.operation.params), inst.qubits)
+        offset = self.offset_cache.get(cache_key, 0)
+
         commutes_bool = True
         # Check commutation with all previous operations
-        for op in self.operations:
+        for op_idx, op in enumerate(self.operations[offset:]):  # noqa: B007
             if op[0].name == "pauli":
                 # PERF: When the operation stored inside the LightCone is a Pauli, we know how to
                 # reduce its size to consider only those qubits that actually overlap with the
@@ -107,6 +114,8 @@ class LightCone(NamedTuple):
                 commutes_bool = False
                 break
 
+        self.offset_cache[cache_key] = op_idx + offset
+
         return commutes_bool
 
     @classmethod
@@ -125,7 +134,7 @@ class LightCone(NamedTuple):
         bit_terms = str(pauli[mask])
         qargs = [circuit.qubits[i] for i in indices]
 
-        return cls(set(qargs), [(PauliGate(bit_terms), qargs)])
+        return cls(set(qargs), [(PauliGate(bit_terms), qargs)], {})
 
     @classmethod
     def initialize_from_measurements(
@@ -155,4 +164,4 @@ class LightCone(NamedTuple):
         else:
             raise NotImplementedError
 
-        return cls(set(qargs), [(ZGate(), [idx]) for idx in qargs])
+        return cls(set(qargs), [(ZGate(), [idx]) for idx in qargs], {})

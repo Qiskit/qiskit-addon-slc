@@ -25,7 +25,7 @@ def test_zxz(subtests):
     """
     qubits = list([Qubit() for _ in range(3)])
     operations = [(PauliGate("ZXZ"), qubits)]
-    lc = LightCone(set(qubits), operations)
+    lc = LightCone(set(qubits), operations, {})
 
     with subtests.test("cz(0,2)"):
         assert lc.commutes(CircuitInstruction(CZGate(), (qubits[0], qubits[2])))
@@ -44,7 +44,7 @@ def test_zzz(subtests):
     """
     qubits = list([Qubit() for _ in range(3)])
     operations = [(PauliGate("ZZZ"), qubits)]
-    lc = LightCone(set(qubits), operations)
+    lc = LightCone(set(qubits), operations, {})
 
     with subtests.test("cz(0,2)"):
         assert lc.commutes(CircuitInstruction(CZGate(), (qubits[0], qubits[2])))
