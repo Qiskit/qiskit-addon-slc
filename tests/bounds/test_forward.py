@@ -69,7 +69,6 @@ def test_max_num_boxes():
         obs_pauli,
         eigval_max_qubits=20,
         evolution_max_terms=1000,
-        atol=1e-18,
         max_num_boxes=max_num_boxes,
     )
 

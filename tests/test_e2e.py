@@ -92,7 +92,8 @@ def test_e2e(use_clifford: bool):
         obs_pauli,
         eigval_max_qubits=20,
         evolution_max_terms=1000,
-        atol=1e-18,
+        atol_simplify=1e-10,
+        atol_eigenvalue=1e-16,
     )
 
     forward_tightened_bounds = tighten_with_speed_limit(
