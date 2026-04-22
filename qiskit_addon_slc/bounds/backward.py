@@ -107,9 +107,7 @@ def compute_backward_bounds(
     /,
     *,
     evolution_max_terms: int = 1_000_000,
-    max_num_boxes: int | None = None,
-    num_processes: int = 1,
-    timeout: float | None = None,
+    **kwargs,
 ) -> Bounds:
     r"""Compute the backward-evolved unequal-time commutator bounds.
 
@@ -137,12 +135,7 @@ def compute_backward_bounds(
         noise_model_paulis: the Pauli error terms to consider for each noise model.
         evolution_max_terms: the maximum number of operator terms to keep track of during the
             evolution. (If the operator exceeds this size, the smallest terms are truncated).
-        max_num_boxes: the maximum number of boxes for which to compute bounds. Bounds for any
-            additional boxes will be given the trivial upper bound value of :math:`2.0`.
-        num_processes: the number of parallel processes to use.
-        timeout: an optional timeout (in seconds) after which all remaining layers are filled with
-            trivial numerical bounds of ``2.0``. Note, that this is not a strict timeout and the
-            layer being processed at the time of reaching this timeout will complete normally.
+        kwargs: any additional keyword arguments will be forward to :func:`.compute_bounds`.
 
     Returns:
         The backward-evolved unequal-time commutator bounds.
@@ -165,9 +158,7 @@ def compute_backward_bounds(
         lc,
         norm_fn,
         backwards=True,
-        max_num_boxes=max_num_boxes,
-        num_processes=num_processes,
-        timeout=timeout,
+        **kwargs,
     )
 
     return comm_norms
