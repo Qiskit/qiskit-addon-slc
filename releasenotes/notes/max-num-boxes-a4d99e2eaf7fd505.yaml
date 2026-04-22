@@ -1,0 +1,10 @@
+---
+features:
+  - |
+    Added the ``max_num_boxes`` argument to
+    :func:`~qiskit_addon_slc.bounds.compute_forward_bounds` and
+    :func:`~qiskit_addon_slc.bounds.compute_backward_bounds`. This new optional
+    setting will set the maximum number of :class:`~qiskit.circuit.BoxOp`
+    instructions for which to compute shaded light-cone bounds. Any remaining
+    boxes with an :class:`~samplomatic.InjectNoise` annotation will be given
+    trivial upper bounds of :math:`2.0`.

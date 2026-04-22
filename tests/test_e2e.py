@@ -22,7 +22,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from qiskit import QuantumCircuit, transpile
+from qiskit import transpile
 from qiskit.quantum_info import Pauli, PauliLindbladMap, QubitSparsePauliList
 from qiskit_addon_slc.bounds import (
     compute_backward_bounds,
@@ -36,33 +36,10 @@ from samplomatic.transpiler import generate_boxing_pass_manager
 from samplomatic.transpiler.passes import AddInjectNoise
 from samplomatic.utils import find_unique_box_instructions
 
+from . import construct_trotter_circuit
+
 RANDOM_SEED = 42
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(module)s %(message)s")
-
-
-def _construct_trotter_circuit(
-    num_qubits: int,
-    num_trotter_steps: int,
-    rx_angle: float,
-    rzz_angle: float,
-    use_clifford: bool = False,
-) -> QuantumCircuit:
-    circuit = QuantumCircuit(num_qubits)
-
-    for _ in range(num_trotter_steps):
-        circuit.rx(rx_angle, range(num_qubits))
-        circuit.barrier()
-        for first_qubit in (0, 1):
-            for idx in range(first_qubit, num_qubits - 1, 2):
-                if use_clifford:
-                    assert np.isclose(rzz_angle, -np.pi / 2)
-                    circuit.sdg([idx, idx + 1])
-                    circuit.cz(idx, idx + 1)
-                else:
-                    circuit.rzz(rzz_angle, idx, idx + 1)
-        circuit.barrier()
-
-    return circuit
 
 
 @pytest.mark.parametrize("use_clifford", [False, True])
@@ -81,7 +58,7 @@ def test_e2e(use_clifford: bool):
     AddInjectNoise._MODIFIER_REF_COUNTER = count()
 
     num_qubits = 50
-    circuit = _construct_trotter_circuit(
+    circuit = construct_trotter_circuit(
         num_qubits=num_qubits,
         num_trotter_steps=4,
         rx_angle=np.pi / 16,
