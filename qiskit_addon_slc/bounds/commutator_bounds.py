@@ -83,7 +83,7 @@ class CommutatorBounds(NamedTuple):
         The value of ``2.0`` is used because a Pauli observable bounded on the range
         ``[-1, +1]`` cannot be biased by more than ``2.0``.
         """
-        return min(self.commutator_bound + self.truncation_bias, 2.0)
+        return float(np.nanmin((self.commutator_bound + self.truncation_bias, 2.0)))
 
 
 def compute_bounds(
