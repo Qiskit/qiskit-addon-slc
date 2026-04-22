@@ -61,6 +61,9 @@ class CommutatorBounds(NamedTuple):
     If the norm computation exceeds specified difficulty limits, it will be abandoned in favor of a
     simpler bound based on the triangle inequality, which is indicated by
     :attr:`fallback_to_tri_ineq` being set to ``True``.
+
+    This value may be ``NaN`` when the computation of the commutor bound was aborted. This can
+    happen when the :attr:`truncation_bias` already exceeds the theoretical bound of ``2.0``.
     """
 
     truncation_bias: float
@@ -90,6 +93,7 @@ def compute_bounds(
     norm_fn: Callable[[Pauli, RotationGates], CommutatorBounds],
     *,
     backwards: bool,
+    max_num_boxes: int | None = None,
     num_processes: int = 1,
     timeout: float | None = None,
 ) -> Bounds:
@@ -112,6 +116,8 @@ def compute_bounds(
         light_cone: the initialized and stateful :class:`.LightCone` tracker.
         norm_fn: the function implementing the specific unequal time commutator.
         backwards: whether to iterate over the ``circuit`` in reverse.
+        max_num_boxes: the maximum number of boxes for which to compute bounds. Bounds for any
+            additional boxes will be given the trivial upper bound value of :math:`2.0`.
         num_processes: the number of parallel processes to use.
         timeout: an optional timeout (in seconds) after which all remaining layers are filled with
             trivial numerical bounds of ``2.0``. Note, that this is not a strict timeout and the
@@ -172,6 +178,8 @@ def compute_bounds(
     start = time.time()
     LOGGER.info("Starting to spawn bound computation tasks")
 
+    encountered_num_boxes = 0
+
     for circ_inst, qargs, box_id, noise_id in iter_circuit(circuit, reverse=True):
         if box_id is None:
             _handle_circuit_instruction(circ_inst)
@@ -181,7 +189,13 @@ def compute_bounds(
         assert noise_id is not None
 
         noise_terms: QubitSparsePauliList = noise_model_paulis[noise_id]
+        # pre-populate computed bounds with trivial upper bound
         gathered_bounds[box_id] = (np.full(len(noise_terms), 2.0), noise_terms)
+
+        encountered_num_boxes += 1
+        if max_num_boxes is not None and encountered_num_boxes > max_num_boxes:
+            # skipping actual bound computation and limiting bound estimate to trivial value
+            continue
 
         if backwards:
             # NOTE: we unroll the BoxOp immediately to allow gates contained within the box be

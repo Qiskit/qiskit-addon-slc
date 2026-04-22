@@ -33,6 +33,7 @@ from qiskit.quantum_info import (
     SparsePauliOp,
 )
 
+from ..globals import ZERO_ATOL
 from ..utils import remove_measure
 from .commutator_bounds import Bounds, CommutatorBounds, compute_bounds
 from .light_cone import LightCone
@@ -78,10 +79,13 @@ def _time_evolved_norm_backward(
         operator=pauli,
         rot_gates=gates,
         max_terms=evolution_max_terms,
-        atol=0,
+        atol=ZERO_ATOL,
         frame="s",
     )
     trunc_bias = 2 * trunc_onenorm
+
+    if trunc_bias >= 2.0:
+        return CommutatorBounds(float("NaN"), trunc_bias, False)
 
     acts_on_zero = np.any(pauli.paulis.x, axis=1)
     x = pauli.paulis.x[acts_on_zero]
@@ -103,6 +107,7 @@ def compute_backward_bounds(
     /,
     *,
     evolution_max_terms: int = 1_000_000,
+    max_num_boxes: int | None = None,
     num_processes: int = 1,
     timeout: float | None = None,
 ) -> Bounds:
@@ -132,6 +137,8 @@ def compute_backward_bounds(
         noise_model_paulis: the Pauli error terms to consider for each noise model.
         evolution_max_terms: the maximum number of operator terms to keep track of during the
             evolution. (If the operator exceeds this size, the smallest terms are truncated).
+        max_num_boxes: the maximum number of boxes for which to compute bounds. Bounds for any
+            additional boxes will be given the trivial upper bound value of :math:`2.0`.
         num_processes: the number of parallel processes to use.
         timeout: an optional timeout (in seconds) after which all remaining layers are filled with
             trivial numerical bounds of ``2.0``. Note, that this is not a strict timeout and the
@@ -158,6 +165,7 @@ def compute_backward_bounds(
         lc,
         norm_fn,
         backwards=True,
+        max_num_boxes=max_num_boxes,
         num_processes=num_processes,
         timeout=timeout,
     )

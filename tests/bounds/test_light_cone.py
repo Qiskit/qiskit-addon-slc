@@ -10,10 +10,6 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-# Warning: this module is not documented and it does not have an RST file.
-# If we ever publicly expose interfaces users can import from this module,
-# we should set up its RST file.
-
 """Tests for the LightCone commutation checker."""
 
 from qiskit.circuit import CircuitInstruction, Qubit
@@ -29,7 +25,7 @@ def test_zxz(subtests):
     """
     qubits = list([Qubit() for _ in range(3)])
     operations = [(PauliGate("ZXZ"), qubits)]
-    lc = LightCone(set(qubits), operations)
+    lc = LightCone(set(qubits), operations, {})
 
     with subtests.test("cz(0,2)"):
         assert lc.commutes(CircuitInstruction(CZGate(), (qubits[0], qubits[2])))
@@ -48,7 +44,7 @@ def test_zzz(subtests):
     """
     qubits = list([Qubit() for _ in range(3)])
     operations = [(PauliGate("ZZZ"), qubits)]
-    lc = LightCone(set(qubits), operations)
+    lc = LightCone(set(qubits), operations, {})
 
     with subtests.test("cz(0,2)"):
         assert lc.commutes(CircuitInstruction(CZGate(), (qubits[0], qubits[2])))

@@ -47,7 +47,7 @@ basetest = [
 ]
 test = [
     "qiskit-addon-slc[basetest]",
-    "qiskit-ibm-runtime",
+    "qiskit-ibm-runtime>=0.46",
 ]
 doctest = [
     "qiskit-addon-slc[basetest,notebook-dependencies]",
@@ -72,7 +72,7 @@ lint = [
 notebook-dependencies = [
     "qiskit-addon-slc",
     "qiskit-addon-utils>=0.3.0",
-    "qiskit-ibm-runtime @ git+https://github.com/Qiskit/qiskit-ibm-runtime.git",
+    "qiskit-ibm-runtime>=0.46",
 ]
 docs = [
     "qiskit-addon-slc[doctest]",
