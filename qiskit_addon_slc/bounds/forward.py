@@ -94,6 +94,9 @@ def time_evolved_norm_forward(
     )
     trunc_bias = 2 * trunc_onenorm
 
+    if trunc_bias >= 2.0:
+        return CommutatorBounds(float("NaN"), trunc_bias, False)
+
     # Handle case of a single-Pauli:
     # Ignore limit on num qubits since don't need to go to computational basis.
     # Efficiently handles Clifford case.
@@ -124,6 +127,9 @@ def time_evolved_norm_forward(
     one_norm_loss = one_norm_before - one_norm_after
     one_norm_loss = max(one_norm_loss, np.float64(0.0))
     trunc_bias += one_norm_loss
+
+    if trunc_bias >= 2.0:
+        return CommutatorBounds(float("NaN"), trunc_bias, False)
 
     # Handle case where commutator is 0:
     if np.logical_not(np.any((commutator.paulis.x, commutator.paulis.z))) and np.isclose(

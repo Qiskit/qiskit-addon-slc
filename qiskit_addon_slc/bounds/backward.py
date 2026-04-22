@@ -84,6 +84,9 @@ def _time_evolved_norm_backward(
     )
     trunc_bias = 2 * trunc_onenorm
 
+    if trunc_bias >= 2.0:
+        return CommutatorBounds(float("NaN"), trunc_bias, False)
+
     acts_on_zero = np.any(pauli.paulis.x, axis=1)
     x = pauli.paulis.x[acts_on_zero]
     z = pauli.paulis.z[acts_on_zero]
