@@ -61,6 +61,9 @@ class CommutatorBounds(NamedTuple):
     If the norm computation exceeds specified difficulty limits, it will be abandoned in favor of a
     simpler bound based on the triangle inequality, which is indicated by
     :attr:`fallback_to_tri_ineq` being set to ``True``.
+
+    This value may be ``NaN`` when the computation of the commutor bound was aborted. This can
+    happen when the :attr:`truncation_bias` already exceeds the theoretical bound of ``2.0``.
     """
 
     truncation_bias: float
