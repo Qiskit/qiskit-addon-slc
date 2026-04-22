@@ -40,6 +40,7 @@ from qiskit.quantum_info import (
     SparsePauliOp,
 )
 
+from .. import globals as slc_globals
 from ..utils import find_indices, iter_circuit
 from .light_cone import LightCone
 
@@ -242,13 +243,12 @@ def compute_bounds(
     total_num_tasks = len(tasks)
     LOGGER.info(f"Total number of spawned tasks: {total_num_tasks}")
 
-    progress_polling_rate = 1
     len_progress_indicator = 50
     per_progress_char = total_num_tasks / len_progress_indicator
 
     try:
         while tasks:
-            next(iter(tasks)).wait(progress_polling_rate)
+            next(iter(tasks)).wait(slc_globals.PROGRESS_POLLING_RATE)
             tasks = {t for t in tasks if not t.ready()}
             completed = total_num_tasks - len(tasks)
             perc = (completed / total_num_tasks) * 100

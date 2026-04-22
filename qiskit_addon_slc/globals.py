@@ -20,10 +20,19 @@
 
 This module provides a number of globally configurable settings.
 
+.. autoclass:: PROGRESS_POLLING_RATE
+
 .. autoclass:: ZERO_ATOL
 """
 
 import sys
+
+PROGRESS_POLLING_RATE = 1
+"""The polling rate for the progress indicator of the commutator bound task computation.
+
+This number corresponds to the number of seconds to wait between progress indicator updates.
+It defaults to ``1``.
+"""
 
 ZERO_ATOL = 10 * sys.float_info.epsilon
 """The absolute tolerance value below which terms are considered truly zero and are truncated.
