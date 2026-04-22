@@ -1,0 +1,6 @@
+---
+deprecations:
+  - |
+    The ``atol`` argument to the :func:`.compute_forward_bounds` function has
+    been deprecated. Use the new ``atol_simplify`` and ``atol_eigenvalue``
+    arguments instead.

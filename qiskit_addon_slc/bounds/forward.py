@@ -35,6 +35,7 @@ from qiskit.quantum_info import (
     SparseObservable,
     SparsePauliOp,
 )
+from qiskit.utils import deprecate_arg
 
 from ..globals import ZERO_ATOL
 from ..utils import get_extremal_eigenvalue, remove_measure
@@ -53,7 +54,8 @@ def time_evolved_norm_forward(
     evolution_max_terms: int = np.iinfo(np.uint).max,
     eigval_max_qubits: int = np.iinfo(np.uint).max,
     comm_norm_order: int = 2,
-    atol: float = 1e-8,
+    atol_simplify: float = 1e-8,
+    atol_eigenvalue: float = 1e-8,
 ) -> CommutatorBounds:
     """Compute the bound of an error Pauli term evolved forward to the target observable.
 
@@ -76,8 +78,12 @@ def time_evolved_norm_forward(
             computation will still be attempted. When this value is exceeded, the bound is
             approximated via a simpler and more loose triangle inequality.
         comm_norm_order: the order of the commutator norm to compute.
-        atol: the absolute tolerance used for trimming terms from the commutator and for detecting
-            convergence of the commutator's eigenvalue.
+        atol_simplify: the absolute tolerance used for trimming terms from the commutator. Loosening
+            this tolerance will result in a greater truncation of the commutator's terms, rendering
+            the computation of its eigenvalue cheaper but less accurate.
+        atol_eigenvalue: the absolute tolerance used for detecting convergence of the commutator's
+            eigenvalue. Loosening this tolerance will result in a less accurate eigenvalue as
+            computed by the iterative Davidson eigensolver.
 
     Returns:
         The unequal-time commutator bound.
@@ -121,7 +127,7 @@ def time_evolved_norm_forward(
     commutator = commutator.simplify(atol=0)
     one_norm_before = np.linalg.norm(commutator.coeffs, ord=1)
     # compute 1-norm after simplifying to atol
-    commutator = commutator.simplify(atol=atol)
+    commutator = commutator.simplify(atol=atol_simplify)
     one_norm_after = np.linalg.norm(commutator.coeffs, ord=1)
     # compute loss in 1-norm due to simplifying to atol
     one_norm_loss = one_norm_before - one_norm_after
@@ -178,7 +184,7 @@ def time_evolved_norm_forward(
         success = True
 
     else:
-        success, comm_norm = get_extremal_eigenvalue(commutator, tol=atol)
+        success, comm_norm = get_extremal_eigenvalue(commutator, tol=atol_eigenvalue)
 
     if success:
         comm_norm = np.abs(comm_norm)
@@ -196,6 +202,12 @@ def time_evolved_norm_forward(
     return CommutatorBounds(comm_norm, trunc_bias, False)
 
 
+@deprecate_arg(
+    name="atol",
+    since="0.2.0",
+    package_name="qiskit-addon-slc",
+    additional_msg="Use `atol_simplify` and `atol_eigenvalue` instead.",
+)
 def compute_forward_bounds(
     circuit: QuantumCircuit,
     noise_model_paulis: dict[str, QubitSparsePauliList],
@@ -205,6 +217,8 @@ def compute_forward_bounds(
     evolution_max_terms: int = 1_000_000,
     eigval_max_qubits: int = 14,
     atol: float = 1e-8,
+    atol_simplify: float = 1e-8,
+    atol_eigenvalue: float = 1e-8,
     max_num_boxes: int | None = None,
     num_processes: int = 1,
     timeout: float | None = None,
@@ -232,8 +246,13 @@ def compute_forward_bounds(
         eigval_max_qubits: the maximum number of qubits of a commutator for which the eigenvalue
             will still be attempted to be computed. When this value is exceeded, the bound is
             approximated via a simpler and more loose triangle inequality.
-        atol: the absolute tolerance used for trimming terms from the commutator and for detecting
-            convergence of the commutator's eigenvalue.
+        atol: **DEPRECATED** use ``atol_simplify`` and ``atol_eigenvalue`` instead!
+        atol_simplify: the absolute tolerance used for trimming terms from the commutator. Loosening
+            this tolerance will result in a greater truncation of the commutator's terms, rendering
+            the computation of its eigenvalue cheaper but less accurate.
+        atol_eigenvalue: the absolute tolerance used for detecting convergence of the commutator's
+            eigenvalue. Loosening this tolerance will result in a less accurate eigenvalue as
+            computed by the iterative Davidson eigensolver.
         max_num_boxes: the maximum number of boxes for which to compute bounds. Bounds for any
             additional boxes will be given the trivial upper bound value of :math:`2.0`.
         num_processes: the number of parallel processes to use.
@@ -269,13 +288,24 @@ def compute_forward_bounds(
 
     circuit = remove_measure(circuit)
 
+    if (
+        not np.isclose(atol, 1e-8, atol=1e-9)
+        and np.isclose(atol_simplify, 1e-8, atol=1e-9)
+        and np.isclose(atol_eigenvalue, 1e-8, atol=1e-9)
+    ):
+        # the user specified the deprecated `atol` argument but neither of the other two new
+        # replacement arguments
+        atol_simplify = atol  # pragma: no cover
+        atol_eigenvalue = atol  # pragma: no cover
+
     norm_fn = partial(
         time_evolved_norm_forward,
         observable=pauli,
         evolution_max_terms=evolution_max_terms,
         eigval_max_qubits=eigval_max_qubits,
         comm_norm_order=2,
-        atol=atol,
+        atol_simplify=atol_simplify,
+        atol_eigenvalue=atol_eigenvalue,
     )
 
     lc = LightCone.initialize_from_pauli(circuit, pauli)
