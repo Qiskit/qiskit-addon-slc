@@ -265,7 +265,7 @@ def tighten_with_speed_limit(
     else:
         pauli = observable
 
-    LOGGER.info("Tighting bounds using information propagation speed limits")
+    LOGGER.info("Tightening bounds using information propagation speed limits")
     LOGGER.info("Modelling errors as though they happen *after* each noise layer.")
 
     # convert pauli into array of speed_limit_bounds
