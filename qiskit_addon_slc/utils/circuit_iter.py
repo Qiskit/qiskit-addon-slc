@@ -102,7 +102,7 @@ def iter_circuit(
         box_id = inject_noise.modifier_ref
 
         if log_process:
-            LOGGER.info(f"Noisy box '{box_id}'")
+            LOGGER.debug(f"Noisy box '{box_id}'")
 
         canonical_qubits = [qubit for qubit in circuit.qubits if qubit in circ_inst.qubits]
         # NOTE: we know that the following will be of type list[int] because canonical_qubits is of

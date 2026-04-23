@@ -177,7 +177,7 @@ def compute_bounds(
     tasks = set()
 
     start = time.time()
-    LOGGER.info("Starting to spawn bound computation tasks")
+    LOGGER.debug("Starting to spawn bound computation tasks")
 
     encountered_num_boxes = 0
 
@@ -241,14 +241,14 @@ def compute_bounds(
                 _handle_circuit_instruction(inst)
 
     total_num_tasks = len(tasks)
-    LOGGER.info(f"Total number of spawned tasks: {total_num_tasks}")
+    LOGGER.debug(f"Total number of spawned tasks: {total_num_tasks}")
 
     len_progress_indicator = 50
     per_progress_char = total_num_tasks / len_progress_indicator
 
     try:
         while tasks:
-            next(iter(tasks)).wait(slc_globals.PROGRESS_POLLING_RATE)
+            next(iter(tasks)).wait(slc_globals.PROGRESS_POLLING_PERIOD)
             tasks = {t for t in tasks if not t.ready()}
             completed = total_num_tasks - len(tasks)
             perc = (completed / total_num_tasks) * 100
