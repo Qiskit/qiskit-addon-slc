@@ -27,11 +27,11 @@ This module provides a number of globally configurable settings.
 
 import sys
 
-PROGRESS_POLLING_PERIOD = 1
+PROGRESS_POLLING_PERIOD = 5
 """The polling period for the progress indicator of the commutator bound task computation.
 
 This number corresponds to the number of seconds to wait between progress indicator updates.
-It defaults to ``1``.
+It defaults to ``5``.
 """
 
 ZERO_ATOL = 10 * sys.float_info.epsilon
