@@ -1,5 +1,5 @@
 ---
 features:
   - |
-    The polling rate of the bound computation progress indicator can now be
-    configured via :attr:`qiskit_addon_slc.globals.PROGRESS_POLLING_RATE`.
+    The polling period of the bound computation progress indicator can now be
+    configured via :attr:`qiskit_addon_slc.globals.PROGRESS_POLLING_PERIOD`.

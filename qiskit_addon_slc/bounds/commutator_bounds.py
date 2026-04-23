@@ -248,7 +248,7 @@ def compute_bounds(
 
     try:
         while tasks:
-            next(iter(tasks)).wait(slc_globals.PROGRESS_POLLING_RATE)
+            next(iter(tasks)).wait(slc_globals.PROGRESS_POLLING_PERIOD)
             tasks = {t for t in tasks if not t.ready()}
             completed = total_num_tasks - len(tasks)
             perc = (completed / total_num_tasks) * 100
