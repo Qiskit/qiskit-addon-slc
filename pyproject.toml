@@ -70,7 +70,7 @@ lint = [
 ]
 notebook-dependencies = [
     "qiskit-addon-slc",
-    "qiskit-addon-utils>=0.3.0",
+    "qiskit-addon-utils>=0.3.1",
     "qiskit-ibm-runtime>=0.46",
 ]
 docs = [
