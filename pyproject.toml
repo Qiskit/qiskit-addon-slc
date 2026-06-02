@@ -27,7 +27,7 @@ requires-python = ">=3.10"
 
 dependencies = [
     "matplotlib>=3.10.5, <4",
-    "pyscf>=2.10, <3",
+    "pyscf>=2.13.0, <3",
     "qiskit[visualization]>=2.2, <3",
     "pauli-prop>=0.1.0, <1",
     "rustworkx",
