@@ -27,3 +27,13 @@ def test_davidson() -> None:
     converged, eigval = get_extremal_eigenvalue(spo, tol=1e-5)
     assert converged
     assert np.isclose(eigval, -1.57317)
+
+
+def test_davidson_accepts_legacy_kwargs() -> None:
+    """Test legacy PySCF-style solver kwargs are still accepted."""
+    spo = SparsePauliOp.from_list([("ZI", 1.0)])
+    converged, eigval = get_extremal_eigenvalue(
+        spo, max_cycle=10, max_space=4, lindep=1e-11, max_memory=100
+    )
+    assert converged
+    assert np.isclose(eigval, -1.0)
