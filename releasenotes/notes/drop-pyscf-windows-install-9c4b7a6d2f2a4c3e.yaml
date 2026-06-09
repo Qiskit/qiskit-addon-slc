@@ -1,6 +1,6 @@
 ---
 fixes:
   - |
-    Removed the direct PySCF dependency from the sparse eigenvalue helper. The
-    helper now uses SciPy, which is already available through Qiskit, so the
-    package can install on Windows without building PySCF from source.
+    Removed PySCF from the core installation requirements so the package can
+    install on Windows without building PySCF from source. The test extra still
+    installs PySCF for the existing Davidson solver coverage.

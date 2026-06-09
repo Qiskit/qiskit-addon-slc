@@ -19,8 +19,6 @@
 from typing import cast
 
 import numpy as np
-import scipy.linalg
-import scipy.sparse.linalg
 from qiskit.quantum_info import SparsePauliOp
 
 
@@ -34,49 +32,57 @@ def get_extremal_eigenvalue(spo: SparsePauliOp, **kwargs) -> tuple[bool, float]:
 
     Args:
         spo: the operator whose minimal eigenvalue to find.
-        kwargs: additional keyword arguments for :func:`~scipy.sparse.linalg.eigsh`. When
+        kwargs: additional keyword arguments for :func:`~pyscf.lib.linalg_helper.davidson1`. When
             not specified otherwise, the following defaults will be used:
 
             * `tol`: 1e-6
-            * `maxiter`: 500
+            * `max_cycle`: 500
+            * `max_space`: 12
+            * `lindep`: 1e-11
+            * `max_memory`: 2000
 
-            Other values will default to SciPy's default values.
+            Other values will default to PySCF's default values.
 
     Returns:
         A pair indicating whether the Davidson algorithm has converged and the obtained minimal
         eigenvalue.
     """
+    try:
+        import pyscf
+    except ImportError as exc:
+        raise ImportError(
+            "The Davidson eigensolver requires PySCF. Install qiskit-addon-slc[test] or "
+            "install pyscf to use qiskit_addon_slc.utils.get_extremal_eigenvalue."
+        ) from exc
+
     default_kwargs = {
         "tol": 1e-6,
-        "maxiter": 500,
+        "max_cycle": 500,
+        "max_space": 12,
+        "lindep": 1e-11,
+        "max_memory": 2000,
     }
-    if "max_cycle" in kwargs and "maxiter" not in kwargs:
-        kwargs["maxiter"] = kwargs.pop("max_cycle")
-    for pyscf_only_arg in ("max_space", "lindep", "max_memory"):
-        kwargs.pop(pyscf_only_arg, None)
     default_kwargs.update(kwargs)
 
     spmat = spo.to_matrix(sparse=True, force_serial=True)
 
-    if spmat.shape[0] <= 2:
-        eigenvalues = scipy.linalg.eigvalsh(spmat.toarray(), subset_by_index=(0, 0))
-        return True, float(eigenvalues[0])
+    x0 = [_random_initial_guess(spmat.shape)]
 
-    try:
-        eigenvalues = scipy.sparse.linalg.eigsh(
-            spmat,
-            k=1,
-            which="SA",
-            v0=_random_initial_guess(spmat.shape),
-            return_eigenvectors=False,
-            **default_kwargs,
-        )
-    except scipy.sparse.linalg.ArpackNoConvergence as exc:
-        if exc.eigenvalues is None or len(exc.eigenvalues) == 0:
-            return False, np.nan
-        return False, float(exc.eigenvalues[0])
+    diag = spmat.diagonal()
 
-    return True, float(eigenvalues[0])
+    def precond(dx, e, _):
+        x = diag - e
+        x[np.abs(x) < default_kwargs["tol"]] = default_kwargs["tol"]
+        return dx / x
+
+    converged, e, _ = pyscf.lib.davidson1(
+        lambda vecs: [spmat.dot(v) for v in vecs],
+        x0,
+        precond,
+        **default_kwargs,
+    )
+
+    return converged, e[0]
 
 
 def _random_initial_guess(shape: tuple[int, ...]) -> np.ndarray:

@@ -47,6 +47,7 @@ basetest = [
 ]
 test = [
     "qiskit-addon-slc[basetest]",
+    "pyscf>=2.10, <3",
     "qiskit-ibm-runtime>=0.46",
 ]
 doctest = [
