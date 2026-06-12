@@ -1,15 +1,13 @@
-Installation Instructions
+Installation instructions
 =========================
 
-Let's see how to install the package. The first
-thing to do is choose how you're going to run and install the
-packages. There are two primary ways to do this:
+First, choose how you're going to run and install the packages. There are two primary ways to do this:
 
 - :ref:`Option 1`
 - :ref:`Option 2`
 
-Pre-Installation
-^^^^^^^^^^^^^^^^
+Prerequisites
+^^^^^^^^^^^^^
 
 First, create a minimal environment with only Python installed in it. We recommend using `Python virtual environments <https://docs.python.org/3.10/tutorial/venv.html>`__.
 
@@ -41,7 +39,7 @@ The most straightforward way to install the ``qiskit-addon-slc`` package is via 
 Option 2: Install from Source
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Users who wish to develop in the repository or run the notebooks locally may want to install from source.
+If you plan to develop in the repository or run the notebooks locally, install from source.
 
 If so, the first step is to clone the ``qiskit-addon-slc`` repository.
 
@@ -56,9 +54,9 @@ Next, upgrade ``pip`` and enter the repository.
     pip install --upgrade pip
     cd qiskit-addon-slc
 
-The next step is to install ``qiskit-addon-slc`` to the virtual environment. If you plan on running the notebooks, install the
-notebook dependencies in order to run all the visualizations in the notebooks. If you plan on developing in the repository, you
-may want to install the ``dev`` dependencies.
+The next step is to install ``qiskit-addon-slc`` to the virtual environment.
+Install the notebook dependencies if you plan to run all the visualizations in the notebooks.
+If you plan on developing in the repository, install the ``dev`` dependencies.
 
 Adjust the options below to suit your needs.
 
