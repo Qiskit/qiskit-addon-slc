@@ -15,10 +15,13 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 from qiskit.quantum_info import SparsePauliOp
 from qiskit_addon_slc.utils.davidson import get_extremal_eigenvalue
+from qiskit_addon_slc.utils.optionals import HAS_PYSCF
 
 
+@pytest.mark.skipif(not HAS_PYSCF, reason="PySCF is required")
 def test_davidson() -> None:
     """Test finding the extremal eigenvalue of an operator using the Davidson algorithm."""
     spo = SparsePauliOp.from_sparse_list(
