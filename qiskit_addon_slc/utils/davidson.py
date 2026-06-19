@@ -21,7 +21,10 @@ from typing import cast
 import numpy as np
 from qiskit.quantum_info import SparsePauliOp
 
+from .optionals import HAS_PYSCF
 
+
+@HAS_PYSCF.require_in_call
 def get_extremal_eigenvalue(spo: SparsePauliOp, **kwargs) -> tuple[bool, float]:
     """Finds the extremal eigenvalue of the provided operator.
 
@@ -47,13 +50,7 @@ def get_extremal_eigenvalue(spo: SparsePauliOp, **kwargs) -> tuple[bool, float]:
         A pair indicating whether the Davidson algorithm has converged and the obtained minimal
         eigenvalue.
     """
-    try:
-        import pyscf
-    except ImportError as exc:
-        raise ImportError(
-            "The Davidson eigensolver requires PySCF. Install qiskit-addon-slc[test] or "
-            "install pyscf to use qiskit_addon_slc.utils.get_extremal_eigenvalue."
-        ) from exc
+    import pyscf
 
     default_kwargs = {
         "tol": 1e-6,

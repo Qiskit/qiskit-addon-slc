@@ -1,6 +1,7 @@
 ---
-fixes:
+features:
   - |
-    Removed PySCF from the core installation requirements so the package can
-    install on Windows without building PySCF from source. The test extra still
-    installs PySCF for the existing Davidson solver coverage.
+    Removed PySCF from the core installation requirements and moved it to a
+    dedicated optional extra. This allows the package to install on Windows
+    without building PySCF from source, while keeping the PySCF-backed Davidson
+    helper available when ``qiskit-addon-slc[pyscf]`` is installed.

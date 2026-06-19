@@ -103,6 +103,7 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
     "scipy": ("https://docs.scipy.org/doc/scipy/", None),
+    "pyscf": ("https://pyscf.org/", None),
     "qiskit": ("https://quantum.cloud.ibm.com/docs/api/qiskit/", None),
     "qiskit_ibm_runtime": ("https://qiskit.github.io/qiskit-ibm-runtime/", None),
     "qiskit_addon_utils": ("https://qiskit.github.io/qiskit-addon-utils/", None),
