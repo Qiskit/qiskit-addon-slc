@@ -40,6 +40,7 @@ from qiskit.quantum_info import (
     SparsePauliOp,
 )
 
+from .. import globals as slc_globals
 from ..utils import find_indices, iter_circuit
 from .light_cone import LightCone
 
@@ -83,7 +84,7 @@ class CommutatorBounds(NamedTuple):
         The value of ``2.0`` is used because a Pauli observable bounded on the range
         ``[-1, +1]`` cannot be biased by more than ``2.0``.
         """
-        return min(self.commutator_bound + self.truncation_bias, 2.0)
+        return float(np.nanmin((self.commutator_bound + self.truncation_bias, 2.0)))
 
 
 def compute_bounds(
@@ -176,7 +177,7 @@ def compute_bounds(
     tasks = set()
 
     start = time.time()
-    LOGGER.info("Starting to spawn bound computation tasks")
+    LOGGER.debug("Starting to spawn bound computation tasks")
 
     encountered_num_boxes = 0
 
@@ -240,15 +241,14 @@ def compute_bounds(
                 _handle_circuit_instruction(inst)
 
     total_num_tasks = len(tasks)
-    LOGGER.info(f"Total number of spawned tasks: {total_num_tasks}")
+    LOGGER.debug(f"Total number of spawned tasks: {total_num_tasks}")
 
-    progress_polling_rate = 1
     len_progress_indicator = 50
     per_progress_char = total_num_tasks / len_progress_indicator
 
     try:
         while tasks:
-            next(iter(tasks)).wait(progress_polling_rate)
+            next(iter(tasks)).wait(slc_globals.PROGRESS_POLLING_PERIOD)
             tasks = {t for t in tasks if not t.ready()}
             completed = total_num_tasks - len(tasks)
             perc = (completed / total_num_tasks) * 100

@@ -30,16 +30,32 @@ lightcone.
 .. autofunction:: merge_bounds
 
 .. autofunction:: compute_local_scales
+
+----
+
+This module also contains some lower level functions which are usually not accessed by an end-user
+directly, but may prove useful for additional development on top of this package.
+
+.. autofunction:: compute_bounds
+
+.. autoclass:: CommutatorBounds
+   :members:
+   :no-inherited-members:
+   :no-special-members:
+   :show-inheritance:
 """
 
 from .backward import compute_backward_bounds
+from .commutator_bounds import CommutatorBounds, compute_bounds
 from .forward import compute_forward_bounds
 from .local_scales import compute_local_scales
 from .merge import merge_bounds
 from .speed_limit import tighten_with_speed_limit
 
 __all__ = [
+    "CommutatorBounds",
     "compute_backward_bounds",
+    "compute_bounds",
     "compute_forward_bounds",
     "compute_local_scales",
     "merge_bounds",

@@ -37,7 +37,7 @@ from qiskit.quantum_info import (
 )
 from qiskit.utils import deprecate_arg
 
-from ..globals import ZERO_ATOL
+from .. import globals as slc_globals
 from ..utils import get_extremal_eigenvalue, remove_measure
 from .commutator_bounds import Bounds, CommutatorBounds, compute_bounds
 from .light_cone import LightCone
@@ -95,7 +95,7 @@ def time_evolved_norm_forward(
         operator=pauli,
         rot_gates=gates,
         max_terms=evolution_max_terms,
-        atol=ZERO_ATOL,
+        atol=slc_globals.ZERO_ATOL,
         frame="s",
     )
     trunc_bias = 2 * trunc_onenorm
@@ -219,9 +219,7 @@ def compute_forward_bounds(
     atol: float = 1e-8,
     atol_simplify: float = 1e-8,
     atol_eigenvalue: float = 1e-8,
-    max_num_boxes: int | None = None,
-    num_processes: int = 1,
-    timeout: float | None = None,
+    **kwargs,
 ) -> Bounds:
     r"""Compute the forward-evolved unequal-time commutator bounds.
 
@@ -253,12 +251,7 @@ def compute_forward_bounds(
         atol_eigenvalue: the absolute tolerance used for detecting convergence of the commutator's
             eigenvalue. Loosening this tolerance will result in a less accurate eigenvalue as
             computed by the iterative Davidson eigensolver.
-        max_num_boxes: the maximum number of boxes for which to compute bounds. Bounds for any
-            additional boxes will be given the trivial upper bound value of :math:`2.0`.
-        num_processes: the number of parallel processes to use.
-        timeout: an optional timeout (in seconds) after which all remaining layers are filled with
-            trivial numerical bounds of ``2.0``. Note, that this is not a strict timeout and the
-            layer being processed at the time of reaching this timeout will complete normally.
+        kwargs: any additional keyword arguments will be forward to :func:`.compute_bounds`.
 
     Returns:
         The unequal-time commutator bound.
@@ -316,9 +309,7 @@ def compute_forward_bounds(
         lc,
         norm_fn,
         backwards=False,
-        max_num_boxes=max_num_boxes,
-        num_processes=num_processes,
-        timeout=timeout,
+        **kwargs,
     )
 
     return comm_norms
