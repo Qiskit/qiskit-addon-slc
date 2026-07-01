@@ -31,7 +31,7 @@ dependencies = [
     "qiskit[visualization]>=2.2, <3",
     "pauli-prop>=0.1.0, <1",
     "rustworkx",
-    "samplomatic>=0.16.0"
+    "samplomatic>=0.20.0"
 ]
 
 [project.optional-dependencies]
