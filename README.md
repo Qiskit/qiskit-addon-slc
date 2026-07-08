@@ -68,7 +68,7 @@ Shaded lightcones are calculated and used in 5 steps:
 4. Prioritize error terms based on their error rate and bounds. Truncate terms from the noise model which have the least effect on the observable expectation value until the user-specified bias tolerance is hit. Alternatively, one can add the most impactful error terms to a noise model until the user-specified sampling cost budget is filled. 
 5. Mitigate the truncated noise model. Although one can mitigate the truncated noise model with any method, mitigating with PEC allows the user to maintain rigorous error bounds on the final expectation value; whereas, heuristic methods like probabilistic error amplification (PEA) and propagated noise absorption (PNA) do not provide rigorous error bounds.
 
-![Overview](docs/images/overview.pdf)
+![Overview](docs/images/overview.png)
 
 #### Software features
 
