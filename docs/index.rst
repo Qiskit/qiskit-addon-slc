@@ -102,7 +102,7 @@ References
 
 .. _ref1:
    
-1. A. Eddins, et al. `Lightcone shading for classically accelerated quantum error mitigation <https://arxiv.org/abs/2409.04401v1>`_, arXiv:2409.04401v1 [quant-ph].
+1. Andrew Eddins, et al., `Lightcone shading for classically accelerated quantum error mitigation <https://arxiv.org/abs/2409.04401v1>`_, arXiv:2409.04401v1 [quant-ph].
 
 .. toctree::
    :hidden:
