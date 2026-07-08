@@ -20,7 +20,7 @@ from importlib.metadata import version as metadata_version
 # be documented.
 sys.path.insert(0, os.path.abspath(".."))
 
-project = "Qiskit addon: shaded lightcones (SLC)"
+project = "Shaded lightcones (SLC)"
 project_copyright = "2025, Qiskit addons team"
 description = "Reducing PEC sampling overhead with shaded lightcones"
 author = "Qiskit addons team"

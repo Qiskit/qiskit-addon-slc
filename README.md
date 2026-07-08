@@ -15,7 +15,7 @@
 
 # Shaded lightcones (SLC)
 
-`qiskit-addon-slc` is a package for computing the shaded lightcone (SLC) of an
+`qiskit-addon-slc` is a package for computing the shaded lightcone (SLC) [[1]](#references) of an
 observable with respect to a quantum circuit. In the context of probabilistic error cancellation (PEC), shaded lightcones
 are similar to conventional binary lightcones in that not mitigating errors outside the
 lightcone can reduce the variance (i.e. sampling cost). Lightcone shading allows this strategy to
@@ -58,7 +58,33 @@ This technique has been used to improve the sampling cost of PEC on a 20-qubit m
 
 ### Technical discussion
 
+#### Method overview
 
+Shaded lightcones are calculated and used in 5 steps:
+
+1. Compute a bound on the effect of each Pauli error term on the observable at the end of the circuit (forward bound)
+2. Compute a bound on the effect of each Pauli error term on the initial state at the beginning of the circuit (backward bound)
+3. Approximate a bias contribution for each Pauli error term using the forward/backward bounds and the term's error rate
+4. Prioritize error terms based on their error rate and bounds. Truncate terms from the noise model which have the least effect on the observable expectation value until the user-specified bias tolerance is hit. Alternatively, one can add the most impactful error terms to a noise model until the user-specified sampling cost budget is filled. 
+5. Mitigate the truncated noise model. Although one can mitigate the truncated noise model with any method, mitigating with PEC allows the user to maintain rigorous error bounds on the final expectation value; whereas, heuristic methods like probabilistic error amplification (PEA) and propagated noise absorption (PNA) do not provide rigorous error bounds.
+
+#### Software features
+
+- Parallel asynchronous bound computation
+- Rust-accelerated propagation
+- Permits ahead-of-time bound computation (i.e. prior to the actual noise learning)
+
+#### Known issues
+
+- Windows not supported
+- `InjectNoise(site="before")` not supported
+- Does not support fine-grained bound merging
+
+#### Future work
+
+- Addressing known issues
+- Rust-accelerated eigenvalue computation
+- Better guides on custom workflows
 
 ----------------------------------------------------------------------------------------------------
 
