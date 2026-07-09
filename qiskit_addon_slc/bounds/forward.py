@@ -132,7 +132,7 @@ def time_evolved_norm_forward(
     # compute loss in 1-norm due to simplifying to atol
     one_norm_loss = one_norm_before - one_norm_after
     one_norm_loss = max(one_norm_loss, np.float64(0.0))
-    trunc_bias += one_norm_loss
+    trunc_bias += 2 * one_norm_loss
 
     if trunc_bias >= 2.0:
         return CommutatorBounds(float("NaN"), trunc_bias, False)
