@@ -77,14 +77,14 @@ Shaded lightcones are calculated and used in 5 steps:
 
 ![Prioritize and truncate](docs/images/prioritize_and_truncate.png)
 
-5. Mitigate the truncated noise model. Although one can mitigate the truncated noise model with any method, mitigating with PEC allows the user to maintain rigorous error bounds on the final expectation value; whereas, methods like probabilistic error amplification (PEA) and propagated noise absorption (PNA) do not provide rigorous error bounds.
+5. Mitigate the truncated noise model.
 
 ![Reduced PEC](docs/images/reduced_pec.png)
 
 #### Software features
 
 - Parallel asynchronous bound computation
-- Rust-accelerated propagation
+- [Rust-accelerated Pauli propagation](https://github.com/Qiskit/pauli-prop)
 - Permits ahead-of-time bound computation (i.e. prior to the actual noise learning)
 
 #### Known issues
@@ -95,9 +95,8 @@ Shaded lightcones are calculated and used in 5 steps:
 
 #### Future work
 
-- Addressing known issues
-- Rust-accelerated eigenvalue computation
-- Better guides on custom workflows
+- Rust-accelerated eigenvalue computation for computing forward bounds
+- Additional guides coming soon
 
 ----------------------------------------------------------------------------------------------------
 

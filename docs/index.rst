@@ -44,7 +44,7 @@ Shaded lightcones are calculated and used in 5 steps:
 
 .. image:: images/prioritize_and_truncate.png
 
-5. Mitigate the truncated noise model. Although one can mitigate the truncated noise model with any method, mitigating with PEC allows the user to maintain rigorous error bounds on the final expectation value; whereas, methods like probabilistic error amplification (PEA) and propagated noise absorption (PNA) do not provide rigorous error bounds.
+5. Mitigate the truncated noise model.
 
 .. image:: images/reduced_pec.png
 
@@ -52,7 +52,7 @@ Software features
 """""""""""""""""
 
 - Parallel asynchronous bound computation
-- Rust-accelerated propagation
+- `Rust-accelerated propagation <https://quantum.cloud.ibm.com/docs/addons/pauli-prop>`_
 - Permits ahead-of-time bound computation (i.e. prior to the actual noise learning)
 
 Known issues
@@ -65,9 +65,8 @@ Known issues
 Future work
 """""""""""
 
-- Addressing known issues
-- Rust-accelerated eigenvalue computation
-- Better guides on custom workflows
+- Rust-accelerated eigenvalue computation for computing forward bounds
+- Additional guides coming soon
 
 Contributing
 ------------
