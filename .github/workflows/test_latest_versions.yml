@@ -25,6 +25,8 @@ jobs:
         include:
           - os: macos-latest
             python-version: "3.13"
+          - os: windows-latest
+            python-version: "3.13"
     steps:
       - uses: actions/checkout@v6
       - name: Set up Python ${{ matrix.python-version }}
@@ -39,3 +41,8 @@ jobs:
         shell: bash
         run: |
           tox -e py --parallel --parallel-no-spinner
+      - name: Test PySCF-backed Davidson helper
+        if: runner.os == 'Linux' && matrix.python-version == '3.13'
+        shell: bash
+        run: |
+          tox -e pyscf --parallel --parallel-no-spinner
