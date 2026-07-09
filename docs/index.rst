@@ -2,14 +2,16 @@
 Shaded lightcones (SLC)
 #######################
 
+.. image:: images/lightcones.png
+
 `qiskit-addon-slc` is a package for computing the shaded lightcone (SLC) `[1] <ref1_>`__ of an
 observable with respect to a quantum circuit. In the context of probabilistic error cancellation (PEC), shaded lightcones
 are similar to conventional binary lightcones in that not mitigating errors outside the
 lightcone can reduce the variance (i.e. sampling cost). Lightcone shading allows this strategy to
 be pushed further by assigning scales to Pauli error generators within the causal lightcone.
 Errors that are assigned smaller scales have less effect on the observable; truncating them from the
-noise model can reduce variance (i.e. sampling cost) at the cost of some residual bias. The `qiskit-addon-slc` package
-gives users the ability to do lightcone shading and control the tradeoff between sampling cost and residual bias.
+noise model can reduce variance (i.e. sampling cost) at the cost of some bias. The `qiskit-addon-slc` package
+gives users the ability to do lightcone shading and control the tradeoff between sampling cost and bias.
 
 Getting started
 ---------------
@@ -31,9 +33,20 @@ Shaded lightcones are calculated and used in 5 steps:
 
 1. Compute a bound on the effect of each Pauli error term on the observable at the end of the circuit (forward bound)
 2. Compute a bound on the effect of each Pauli error term on the initial state at the beginning of the circuit (backward bound)
+
+.. image:: images/bounds.png
+
 3. Approximate a bias contribution for each Pauli error term using the forward/backward bounds and the term's error rate
+
+.. image:: images/merge_bounds.png
+
 4. Prioritize error terms based on their error rate and bounds. Truncate terms from the noise model which have the least effect on the observable expectation value until the user-specified bias tolerance is hit. Alternatively, one can add the most impactful error terms to a noise model until the user-specified sampling cost budget is filled.
-5. Mitigate the truncated noise model. Although one can mitigate the truncated noise model with any method, mitigating with PEC allows the user to maintain rigorous error bounds on the final expectation value; whereas, heuristic methods like probabilistic error amplification (PEA) and propagated noise absorption (PNA) do not provide rigorous error bounds.
+
+.. image:: images/prioritize_and_truncate.png
+
+5. Mitigate the truncated noise model. Although one can mitigate the truncated noise model with any method, mitigating with PEC allows the user to maintain rigorous error bounds on the final expectation value; whereas, methods like probabilistic error amplification (PEA) and propagated noise absorption (PNA) do not provide rigorous error bounds.
+
+.. image:: images/reduced_pec.png
 
 Software features
 """""""""""""""""
