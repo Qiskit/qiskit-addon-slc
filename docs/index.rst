@@ -4,13 +4,13 @@ Shaded lightcones (SLC)
 
 .. image:: images/lightcones.png
 
-`qiskit-addon-slc` is a package for computing the shaded lightcone (SLC) `[1] <ref1_>`__ of an
+``qiskit-addon-slc`` is a package for computing the shaded lightcone (SLC) `[1] <ref1_>`__ of an
 observable with respect to a quantum circuit. In the context of probabilistic error cancellation (PEC), shaded lightcones
 are similar to conventional binary lightcones in that not mitigating errors outside the
 lightcone can reduce the variance (i.e. sampling cost). Lightcone shading allows this strategy to
 be pushed further by assigning scales to Pauli error generators within the causal lightcone.
 Errors that are assigned smaller scales have less effect on the observable; truncating them from the
-noise model can reduce variance (i.e. sampling cost) at the cost of some bias. The `qiskit-addon-slc` package
+noise model can reduce variance (i.e. sampling cost) at the cost of some bias. The ``qiskit-addon-slc`` package
 gives users the ability to do lightcone shading and control the tradeoff between sampling cost and bias.
 
 Getting started
@@ -44,7 +44,7 @@ Shaded lightcones are calculated and used in 5 steps:
 
 .. image:: images/prioritize_and_truncate.png
 
-5. Mitigate the truncated noise model.
+5. Mitigate the truncated noise model. Using the `directed execution model <https://quantum.cloud.ibm.com/docs/guides/directed-execution-model>`__ from Qiskit Runtime, specifying error terms to ignore during PEC sampling is straightforward. See the `tutorial <https://quantum.cloud.ibm.com/docs/tutorials/pec-with-shaded-lightcones>`__ for details.
 
 .. image:: images/reduced_pec.png
 

@@ -54,7 +54,7 @@ A simple guide to help you get started quickly with this package is available [h
 
 ### Use case examples
 
-This technique has been used to improve the sampling cost of PEC on a 20-qubit mirrored Ising circuit [[tutorial]](https://quantum.cloud.ibm.com/docs/en/tutorials/pec-with-shaded-lightcones).
+This technique has been used to improve the sampling cost of PEC on a 20-qubit mirrored Ising circuit [[tutorial]](https://quantum.cloud.ibm.com/docs/tutorials/pec-with-shaded-lightcones).
 
 ----------------------------------------------------------------------------------------------------
 
@@ -77,7 +77,7 @@ Shaded lightcones are calculated and used in 5 steps:
 
 ![Prioritize and truncate](docs/images/prioritize_and_truncate.png)
 
-5. Mitigate the truncated noise model.
+5. Mitigate the truncated noise model. Using the [directed execution model](https://quantum.cloud.ibm.com/docs/guides/directed-execution-model) from Qiskit Runtime, specifying error terms to ignore during PEC sampling is straightforward. See the [tutorial](https://quantum.cloud.ibm.com/docs/tutorials/pec-with-shaded-lightcones) for details.
 
 ![Reduced PEC](docs/images/reduced_pec.png)
 
