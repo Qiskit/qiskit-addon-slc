@@ -219,7 +219,7 @@ def compute_bounds(
             circuit.num_qubits,
         )
 
-        norm_fn = partial(  # type: ignore[call-arg]
+        task_fn = partial(  # type: ignore[call-arg]
             norm_fn,
             gates=RotationGates(
                 rot_gates.gates[::-1], rot_gates.qargs[::-1], rot_gates.thetas[::-1]
@@ -228,7 +228,7 @@ def compute_bounds(
 
         for pauli_idx, pauli in enumerate(local_noise_terms.to_pauli_list()):
             task = pool.apply_async(
-                norm_fn,
+                task_fn,
                 [pauli],
                 callback=partial(_insert_rate, box_id=box_id, rate_idx=pauli_idx),
             )
