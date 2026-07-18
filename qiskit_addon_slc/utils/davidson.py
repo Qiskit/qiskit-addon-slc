@@ -65,7 +65,6 @@ def get_extremal_eigenvalue(spo: SparsePauliOp, **kwargs) -> tuple[bool, float]:
         (may be ``False`` if Davidson fails to converge). ``eigenvalue`` is the most-negative
         eigenvalue of ``spo``.
     """
-
     logicals, amps, exps = _reduce_operator(spo)
     p = logicals.num_qubits
     c = exps.shape[1]
@@ -79,7 +78,7 @@ def get_extremal_eigenvalue(spo: SparsePauliOp, **kwargs) -> tuple[bool, float]:
     # (the signed sum of coefficients), and the minimum over sectors is the answer.
     if p == 0:
         result = True, float((sector_sign * amps.real).sum(axis=1).min())
-    
+
     # Small reduced operator -> diagonalize each sector densely and take
     # overall minimum eigenvalue.
     elif p + c <= _MAX_REDUCED_LOG2_DIM:
@@ -94,7 +93,7 @@ def get_extremal_eigenvalue(spo: SparsePauliOp, **kwargs) -> tuple[bool, float]:
             mat = logical.to_matrix()
             lowest = min(lowest, float(np.linalg.eigvalsh(mat)[0]))
         result = True, lowest
-    
+
     # Else solve iteratively. Each central generator is a ``Z`` on its own qubit (qubits
     # ``p .. p + c - 1``): the resulting ``(p + c)``-qubit operator carries all sectors at once.
     else:
@@ -114,7 +113,13 @@ def _davidson_extremal_eigenvalue(spo: SparsePauliOp, **kwargs) -> tuple[bool, f
     The default ``tol`` is tight because the eigenvalue error runs well above ``tol`` (roughly
     ``tol`` divided by the spectral gap, which is small for these near-degenerate commutators).
     """
-    default_kwargs = {"tol": 1e-10, "max_cycle": 500, "max_space": 12, "lindep": 1e-11, "max_memory": 2000}
+    default_kwargs = {
+        "tol": 1e-10,
+        "max_cycle": 500,
+        "max_space": 12,
+        "lindep": 1e-11,
+        "max_memory": 2000,
+    }
     default_kwargs.update(kwargs)
 
     spmat = spo.to_matrix(sparse=True, force_serial=True)

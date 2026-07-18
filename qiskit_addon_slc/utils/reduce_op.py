@@ -79,13 +79,11 @@ def _reduce_operator(spo: SparsePauliOp) -> tuple[PauliList, np.ndarray, np.ndar
 
 
 def _symplectic_gram_schmidt(paulis: PauliList) -> tuple[PauliList, PauliList]:
-    """Split a set of Paulis into ordered anticommuting pair generators A_0,B_0,A_1,B_1,... plus a
-    mutually commuting center.
+    """Split Paulis into anticommuting generator pairs plus a mutually commuting center.
 
     This is the symplectic Gram-Schmidt procedure of M. M. Wilde, "Logical operators of quantum
-    codes", Phys. Rev. A 79, 062322 (2009), arXiv:0903.5256. Uses ``PauliList.anticommutes`` for the
-    commutation tests and combines terms by XOR-ing their ``z``/``x`` arrays (rebuilding via
-    ``from_symplectic``), so no Pauli phases are ever computed -- only the symplectic vectors matter.
+    codes", Phys. Rev. A 79, 062322 (2009), arXiv:0903.5256. Returned anticommuting generator pairs
+    are ordered as A_0,B_0,A_1,B_1,...
     """
     work = paulis
     pair_gens, center = paulis[:0], paulis[:0]  # empty PauliLists that keep ``num_qubits``
@@ -165,7 +163,7 @@ def _xor_coordinates(
     """
     work = targets.copy()
     coords = np.zeros((len(targets), provenance.shape[1]), dtype=bool)
-    for col, basis_row, prov_row in zip(pivot_cols, basis, provenance):
+    for col, basis_row, prov_row in zip(pivot_cols, basis, provenance, strict=True):
         hit = work[:, col]
         coords[hit] ^= prov_row
         work[hit] ^= basis_row
@@ -178,11 +176,9 @@ def _identities(count: int, num_qubits: int) -> PauliList:
 
 
 def _logical_generators(p: int, num_gens: int) -> PauliList:
-    """Logical generators on ``p`` qubits, in ``gen_vecs`` order: pair generator ``2j`` -> X on qubit
-    ``j``, ``2j+1`` -> Z on qubit ``j``; any trailing central generators map to identity."""
     z = np.zeros((num_gens, p), dtype=bool)
     x = np.zeros((num_gens, p), dtype=bool)
     j = np.arange(p)
-    x[2 * j, j] = True  # A_j -> X_j
-    z[2 * j + 1, j] = True  # B_j -> Z_j
+    x[2 * j, j] = True
+    z[2 * j + 1, j] = True
     return PauliList.from_symplectic(z, x)
