@@ -15,8 +15,15 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
+import qiskit_addon_slc.utils.davidson as davidson
 from qiskit.quantum_info import SparsePauliOp
 from qiskit_addon_slc.utils.davidson import get_extremal_eigenvalue
+
+
+def _dense_min(spo: SparsePauliOp) -> float:
+    """Most-negative eigenvalue computed by brute-force dense diagonalization."""
+    return float(np.linalg.eigvalsh(spo.to_matrix())[0])
 
 
 def test_davidson() -> None:
@@ -27,3 +34,31 @@ def test_davidson() -> None:
     converged, eigval = get_extremal_eigenvalue(spo, tol=1e-5)
     assert converged
     assert np.isclose(eigval, -1.57317)
+
+
+DENSE_OPERATORS = {
+    "single_pauli": SparsePauliOp(["XYZ"], [1.3]),
+    "diagonal": SparsePauliOp(["ZZI", "IZZ", "ZIZ", "IIZ"], [0.5, -1.2, 0.3, 0.9]),
+    "one_pair_plus_central": SparsePauliOp(["XI", "ZI", "IZ"], [0.7, -0.4, 1.1]),
+    "mixed": SparsePauliOp(["XII", "ZII", "IXX", "IZZ", "IYI"], [1.0, 0.5, -0.3, 0.8, 0.6]),
+}
+
+
+@pytest.mark.parametrize("name", list(DENSE_OPERATORS))
+def test_exact_paths_match_dense(name: str) -> None:
+    """The exact paths (``p == 0`` diagonal and dense per-sector) are exact and always converge."""
+    spo = DENSE_OPERATORS[name]
+    converged, eigval = get_extremal_eigenvalue(spo)
+    assert converged
+    assert np.isclose(eigval, _dense_min(spo), atol=1e-10)
+
+
+def test_iterative_path_matches_dense(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Force the iterative fallback (via a low cutoff) and check it matches dense diagonalization."""
+    monkeypatch.setattr(davidson, "_MAX_REDUCED_LOG2_DIM", 1)
+    np.random.seed(0)  # the Davidson initial guess is random
+    # p = 1 (X0, Z0 anticommute), c = 2 (IXX, IZZ central) -> p + c = 3 > cutoff -> iterative.
+    spo = SparsePauliOp(["XII", "ZII", "IXX", "IZZ"], [1.0, 0.5, -0.3, 0.8])
+    converged, eigval = get_extremal_eigenvalue(spo, tol=1e-10)
+    assert converged
+    assert np.isclose(eigval, _dense_min(spo), atol=1e-6)
