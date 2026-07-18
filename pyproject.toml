@@ -183,3 +183,4 @@ convention = "google"
 [tool.typos.default.extend-words]
 arange = "arange"
 CPY = "CPY"
+IZ = "IZ"  # Pauli string, not a typo of "IS"
