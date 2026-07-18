@@ -138,18 +138,18 @@ def _xor_row_reduce(
         pivot = row + below[0]
         if pivot != row:
             work[[row, pivot]] = work[[pivot, row]]
-            if provenance is not None:
+            if track_provenance:
                 provenance[[row, pivot]] = provenance[[pivot, row]]
         others = work[:, col].copy()
         others[row] = False  # eliminate this column from every other row
         work[others] ^= work[row]
-        if provenance is not None:
+        if track_provenance:
             provenance[others] ^= provenance[row]
         pivot_cols.append(col)
         row += 1
         if row == len(work):
             break
-    return pivot_cols, work[:row], (provenance[:row] if provenance is not None else None)
+    return pivot_cols, work[:row], (provenance[:row] if track_provenance else None)
 
 
 def _xor_coordinates(
