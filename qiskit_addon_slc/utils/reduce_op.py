@@ -58,6 +58,7 @@ def _reduce_operator(spo: SparsePauliOp) -> tuple[PauliList, np.ndarray, np.ndar
     # Express every term over the generators at once: ``coords[k]`` is the coordinate vector of
     # ``P_k``, so ``P_k`` equals the ordered product of the chosen generators up to a scalar.
     pivot_cols, basis, provenance = _xor_row_reduce(gen_vecs, track_provenance=True)
+    assert provenance is not None  # track_provenance=True always returns it
     coords = _xor_coordinates(vectors, pivot_cols, basis, provenance)  # (K, G)
 
     # Build each term's physical product ``prod`` and matching logical Pauli by composing the
@@ -138,18 +139,18 @@ def _xor_row_reduce(
         pivot = row + below[0]
         if pivot != row:
             work[[row, pivot]] = work[[pivot, row]]
-            if track_provenance:
+            if provenance is not None:
                 provenance[[row, pivot]] = provenance[[pivot, row]]
         others = work[:, col].copy()
         others[row] = False  # eliminate this column from every other row
         work[others] ^= work[row]
-        if track_provenance:
+        if provenance is not None:
             provenance[others] ^= provenance[row]
         pivot_cols.append(col)
         row += 1
         if row == len(work):
             break
-    return pivot_cols, work[:row], (provenance[:row] if track_provenance else None)
+    return pivot_cols, work[:row], (provenance[:row] if provenance is not None else None)
 
 
 def _xor_coordinates(
