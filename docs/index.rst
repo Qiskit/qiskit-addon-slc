@@ -21,7 +21,7 @@ A simple guide to help you get started quickly with this package is available in
 Use case examples
 -----------------
 
-This technique has been used to lower the sampling cost of probabilistic error cancellation (PEC) in Loschmidt echo studies
+This technique has been used to lower the sampling cost of probabilistic error cancellation (PEC) for Loschmidt echo studies
 of 56-qubit quantum systems. `[2] <ref2_>`__.
 
 Technical discussion
