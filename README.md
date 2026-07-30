@@ -55,7 +55,7 @@ A simple guide to help you get started quickly with this package is available [h
 ### Use case examples
 
 This technique has been used to lower the sampling cost of probabilistic error cancellation (PEC) for
-Loschmidt echo studies of 56-qubit quantum systems. [[2]](#references).
+operator Loschmidt echo experiments with 56 qubits on an IBM Heron processor. [[2]](#references).
 
 ----------------------------------------------------------------------------------------------------
 
