@@ -116,6 +116,8 @@ References
    
 1. Andrew Eddins, et al., `Lightcone shading for classically accelerated quantum error mitigation <https://arxiv.org/abs/2409.04401v1>`_, arXiv:2409.04401v1 [quant-ph].
 
+.. _ref2:
+
 2. Samantha V. Barron, et al., `Observable Estimation in the Absence of Classical Verification <https://arxiv.org/pdf/2607.25998>`_, arXiv:2607.25998 [quant-ph].
 
 .. toctree::
