@@ -38,41 +38,46 @@ def _reduce_operator(spo: SparsePauliOp) -> tuple[PauliList, np.ndarray, np.ndar
     paulis = spo.paulis
     coeffs = spo.coeffs
     n = paulis.num_qubits
-
     vectors = np.hstack([paulis.z, paulis.x])
 
-    # Gram-Schmidt -> ``p`` anticommuting pairs + ``c`` centrals
-    _, span_basis, _ = _xor_row_reduce(vectors)
+    # Gram-Schmidt on a basis of the term span -> p anticommuting pairs + c commuting centrals.
+    _, span_basis = _xor_row_reduce(vectors)
     span = PauliList.from_symplectic(span_basis[:, :n], span_basis[:, n:])
     pair_gens, center = _symplectic_gram_schmidt(span)
     p = len(pair_gens) // 2
 
-    # Ordered generators A_0,B_0,...,A_{p-1},B_{p-1}, then centrals. On the ``p`` logical qubits
-    # A_i->X_i, B_i->Z_i (centrals act only through their per-sector sign).
-    gen_phys = PauliList.from_symplectic(
-        np.vstack([pair_gens.z, center.z]), np.vstack([pair_gens.x, center.x])
-    )
-    gen_vecs = np.hstack([gen_phys.z, gen_phys.x])
+    # Row-reduce the centrals so a term's coefficient on central generator j is just its bit in that
+    # generator's pivot column (used below).
+    center_pivots, center_rref = _xor_row_reduce(np.hstack([center.z, center.x]))
+
+    # Generators A_0,B_0,...,A_{p-1},B_{p-1}, then centrals, as Hermitian Paulis (Y, not iXZ). On the
+    # p logical qubits A_i->X_i, B_i->Z_i; centrals act only through their per-sector sign.
+    pair_vecs = np.hstack([pair_gens.z, pair_gens.x])
+    gen_vecs = np.vstack([pair_vecs, center_rref])
+    gen_phys = PauliList.from_symplectic(gen_vecs[:, :n], gen_vecs[:, n:])
     gen_log = _logical_generators(p, len(gen_phys))
 
-    # Express every term over the generators at once: ``coords[k]`` is the coordinate vector of
-    # ``P_k``, so ``P_k`` equals the ordered product of the chosen generators up to a scalar.
-    pivot_cols, basis, provenance = _xor_row_reduce(gen_vecs, track_provenance=True)
-    assert provenance is not None  # track_provenance=True always returns it
-    coords = _xor_coordinates(vectors, pivot_cols, basis, provenance)  # (K, G)
+    # Decompose each term over the generators: P_k = scalar * product of the chosen generators.
+    # Pair coefficients follow from commutation -- A_i is present iff P_k anticommutes with B_i, and
+    # B_i iff P_k anticommutes with A_i. Central coefficients (commutation is blind to them) are the
+    # residual's bits in the central pivot columns, after removing the pair part.
+    coords = np.zeros((len(coeffs), len(gen_phys)), dtype=bool)
+    for i in range(p):
+        coords[:, 2 * i] = paulis.anticommutes(gen_phys[2 * i + 1])
+        coords[:, 2 * i + 1] = paulis.anticommutes(gen_phys[2 * i])
+    residual = vectors ^ ((coords[:, : 2 * p].astype(int) @ pair_vecs.astype(int)) & 1).astype(bool)
+    coords[:, 2 * p :] = residual[:, center_pivots]
 
-    # Build each term's physical product ``prod`` and matching logical Pauli by composing the
-    # generators into the terms that use them.
+    # Rebuild each term as the ordered product of its generators, physical and logical in lockstep;
+    # the phase relating P_k to that product is read from Qiskit (P_k . prod^dagger = omega * I).
     prods = _identities(len(coeffs), n)
     logicals = _identities(len(coeffs), p)
-    for i in range(len(gen_vecs)):
+    for i in range(len(gen_phys)):
         mask = coords[:, i]
         if mask.any():
             prods[mask] = prods[mask].compose(gen_phys[i])
             logicals[mask] = logicals[mask].compose(gen_log[i])
 
-    # Extract every ``omega`` at once: ``P_k = omega * prod``
-    # so ``P_k . prod^dagger = omega * I``.
     omega_phase = paulis.compose(prods.adjoint()).phase
     amps = coeffs * (-1j) ** omega_phase
     exps = coords[:, 2 * p :].astype(int)  # (K, c) central-generator exponents
@@ -117,19 +122,14 @@ def _symplectic_gram_schmidt(paulis: PauliList) -> tuple[PauliList, PauliList]:
     return pair_gens, center
 
 
-def _xor_row_reduce(
-    mat: np.ndarray, track_provenance: bool = False
-) -> tuple[list[int], np.ndarray, np.ndarray | None]:
-    """XOR row reduction of a boolean matrix.
+def _xor_row_reduce(mat: np.ndarray) -> tuple[list[int], np.ndarray]:
+    """Reduced row echelon form of a boolean matrix over the two-element field (arithmetic is XOR).
 
-    Returns ``(pivot_cols, basis, provenance)``. ``basis`` holds the nonzero reduced rows -- a basis
-    of the row space -- with ``basis[i]`` having its leading 1 in column ``pivot_cols[i]``; every
-    pivot column is cleared from all other rows, so ``basis`` is fully reduced. When
-    ``track_provenance`` is set, ``provenance[i]`` is the boolean mask over the original rows whose
-    XOR yields ``basis[i]`` (otherwise ``None``).
+    Returns ``(pivot_cols, basis)``: ``basis`` holds the nonzero reduced rows (a basis of the row
+    space), with ``basis[i]`` having its leading 1 in column ``pivot_cols[i]`` and that column cleared
+    from every other row.
     """
     work = mat.copy()
-    provenance = np.eye(len(work), dtype=bool) if track_provenance else None
     pivot_cols: list[int] = []
     row = 0
     for col in range(work.shape[1]):
@@ -139,36 +139,14 @@ def _xor_row_reduce(
         pivot = row + below[0]
         if pivot != row:
             work[[row, pivot]] = work[[pivot, row]]
-            if provenance is not None:
-                provenance[[row, pivot]] = provenance[[pivot, row]]
         others = work[:, col].copy()
         others[row] = False  # eliminate this column from every other row
         work[others] ^= work[row]
-        if provenance is not None:
-            provenance[others] ^= provenance[row]
         pivot_cols.append(col)
         row += 1
         if row == len(work):
             break
-    return pivot_cols, work[:row], (provenance[:row] if provenance is not None else None)
-
-
-def _xor_coordinates(
-    targets: np.ndarray, pivot_cols: list[int], basis: np.ndarray, provenance: np.ndarray
-) -> np.ndarray:
-    """Express each row of ``targets`` in the reduced basis, vectorized over all targets.
-
-    ``pivot_cols``, ``basis``, ``provenance`` come from :func:`_xor_row_reduce` (with provenance) of
-    the generator vectors. Returns a ``(len(targets), n_generators)`` boolean matrix whose row ``k``
-    selects the generators whose XOR equals ``targets[k]``. Every target must lie in the row space.
-    """
-    work = targets.copy()
-    coords = np.zeros((len(targets), provenance.shape[1]), dtype=bool)
-    for col, basis_row, prov_row in zip(pivot_cols, basis, provenance, strict=True):
-        hit = work[:, col]
-        coords[hit] ^= prov_row
-        work[hit] ^= basis_row
-    return coords
+    return pivot_cols, work[:row]
 
 
 def _identities(count: int, num_qubits: int) -> PauliList:
