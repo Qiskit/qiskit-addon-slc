@@ -30,22 +30,9 @@ def _random_hermitian(num_qubits: int, num_terms: int, seed: int) -> SparsePauli
 
 
 def _reduced_spectrum(spo: SparsePauliOp) -> np.ndarray:
-    """Full spectrum of the reduced operator gathered over all central sign-sectors."""
-    logicals, amps, exps = _reduce_operator(spo)
-    p = logicals.num_qubits
-    c = exps.shape[1]
-    sector_bits = (np.arange(1 << c)[:, None] >> np.arange(c)) & 1
-    sector_sign = 1 - 2 * ((sector_bits @ exps.T) & 1)
-    if p == 0:
-        # Each sector is a single number: the signed sum of coefficients.
-        return (sector_sign * amps.real).sum(axis=1)
-    base = SparsePauliOp(logicals, amps)
-    base_coeffs = base.coeffs.copy()
-    eigs = []
-    for signs in sector_sign:
-        base.coeffs = base_coeffs * signs
-        eigs.append(np.linalg.eigvalsh(base.to_matrix()))
-    return np.concatenate(eigs)
+    """The reduced operator's 2^(p+c) eigenvalues (its distinct eigenvalues, over all sectors)."""
+    reduced_op, _ = _reduce_operator(spo)
+    return np.linalg.eigvalsh(reduced_op.to_matrix())
 
 
 OPERATORS = {
@@ -82,15 +69,12 @@ def test_reduced_spectrum_matches_original(name: str) -> None:
 def test_reduce_operator_shapes(name: str) -> None:
     """Reduced size ``2^(p + c)`` never exceeds the full ``2^n``, and outputs are consistent."""
     spo = OPERATORS[name]
-    logicals, amps, exps = _reduce_operator(spo)
-    p, c = logicals.num_qubits, exps.shape[1]
-    assert p + c <= spo.num_qubits
-    assert amps.shape == (len(spo),)
-    assert exps.shape == (len(spo), c)
+    reduced_op, num_trailing_Zs = _reduce_operator(spo)
+    assert reduced_op.num_qubits <= spo.num_qubits
+    assert 0 <= num_trailing_Zs <= reduced_op.num_qubits
 
 
 def test_fully_commuting_has_no_pairs() -> None:
-    """A fully-commuting (diagonalizable-in-place) operator reduces to ``p == 0``."""
-    logicals, _, exps = _reduce_operator(OPERATORS["diagonal"])
-    assert logicals.num_qubits == 0
-    assert exps.shape[1] >= 1
+    """A fully-commuting operator reduces to ``p == 0`` (every qubit is a commuting Z)."""
+    reduced_op, num_trailing_Zs = _reduce_operator(OPERATORS["diagonal"])
+    assert num_trailing_Zs == reduced_op.num_qubits

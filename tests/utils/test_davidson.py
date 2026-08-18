@@ -17,7 +17,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 import qiskit_addon_slc.utils.davidson as davidson
-from qiskit.quantum_info import SparsePauliOp
+from qiskit.quantum_info import PauliList, SparsePauliOp
 from qiskit_addon_slc.utils.davidson import get_extremal_eigenvalue
 
 
@@ -62,3 +62,13 @@ def test_iterative_path_matches_dense(monkeypatch: pytest.MonkeyPatch) -> None:
     converged, eigval = get_extremal_eigenvalue(spo, tol=1e-10)
     assert converged
     assert np.isclose(eigval, _dense_min(spo), atol=1e-6)
+
+
+def test_large_diagonal_matches_dense() -> None:
+    """A many-qubit fully-commuting (p == 0) operator takes the diagonal path and stays exact."""
+    rng = np.random.default_rng(0)
+    z = rng.integers(0, 2, (40, 10), dtype=bool)  # Z-only Paulis -> diagonal, 10 > cutoff
+    spo = SparsePauliOp(PauliList.from_symplectic(z, np.zeros_like(z)), rng.standard_normal(40))
+    converged, eigval = get_extremal_eigenvalue(spo)
+    assert converged
+    assert np.isclose(eigval, _dense_min(spo), atol=1e-10)
