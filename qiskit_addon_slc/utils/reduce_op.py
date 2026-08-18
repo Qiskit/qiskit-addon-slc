@@ -84,15 +84,20 @@ def _reduce_operator(spo: SparsePauliOp) -> tuple[PauliList, np.ndarray, np.ndar
     return logicals, amps, exps
 
 
-def _symplectic_gram_schmidt(paulis: PauliList) -> tuple[PauliList, PauliList]:
+def _symplectic_gram_schmidt(paulis: PauliList) -> tuple[PauliList, PauliList, PauliList]:
     """Split Paulis into anticommuting generator pairs plus a mutually commuting center.
 
     This is the symplectic Gram-Schmidt procedure of M. M. Wilde, "Logical operators of quantum
-    codes", Phys. Rev. A 79, 062322 (2009), arXiv:0903.5256. Returned anticommuting generator pairs
-    are ordered as A_0,B_0,A_1,B_1,...
+    codes", Phys. Rev. A 79, 062322 (2009), arXiv:0903.5256. Returns ``(a_paulis, b_paulis, center)``:
+    the two halves of the ``p`` anticommuting pairs (``a_paulis[i]`` anticommutes with ``b_paulis[i]``)
+    and the commuting center.
     """
     work = paulis
-    pair_gens, center = paulis[:0], paulis[:0]  # empty PauliLists that keep ``num_qubits``
+    a_paulis, b_paulis, center = (
+        paulis[:0],
+        paulis[:0],
+        paulis[:0],
+    )  # empty PauliLists that keep ``num_qubits``
     while len(work):
         v, rest = work[0], work[1:]
         anti = rest.anticommutes(v)
@@ -102,10 +107,10 @@ def _symplectic_gram_schmidt(paulis: PauliList) -> tuple[PauliList, PauliList]:
             continue
         j = int(np.argmax(anti))
         w = rest[j]
-        pair_gens = pair_gens.insert(len(pair_gens), v)
-        pair_gens = pair_gens.insert(len(pair_gens), w)
-        # Project the rest to commute with both ``v`` and ``w`` (both flags read from the original
-        # terms): u -> u . w^<u,w> . v^<u,v>, where <.,.> is 1 iff the pair anticommutes.
+        a_paulis += v
+        b_paulis += w
+        # Make the rest commute with both v and w: multiply each by v where it anticommutes with w,
+        # and by w where it anticommutes with v (flags read before either multiply).
         work = rest[np.arange(len(rest)) != j]
         add_v, add_w = work.anticommutes(w), work.anticommutes(v)
         z, x = work.z.copy(), work.x.copy()
@@ -114,12 +119,13 @@ def _symplectic_gram_schmidt(paulis: PauliList) -> tuple[PauliList, PauliList]:
         z[add_w] ^= w.z
         x[add_w] ^= w.x
         work = PauliList.from_symplectic(z, x)
-    # Deferred centrals may still pair among themselves; resolve recursively.
+    # Deferred commuting terms may still pair among themselves; resolve recursively.
     if len(center) and any(center.anticommutes(g).any() for g in center):
-        more, center = _symplectic_gram_schmidt(center)
-        if len(more):
-            pair_gens = pair_gens.insert(len(pair_gens), more)
-    return pair_gens, center
+        a_more, b_more, center = _symplectic_gram_schmidt(center)
+        if len(a_more):
+            a_paulis += a_more
+            b_paulis += b_more
+    return a_paulis, b_paulis, center
 
 
 def _xor_row_reduce(mat: np.ndarray) -> tuple[list[int], np.ndarray]:
