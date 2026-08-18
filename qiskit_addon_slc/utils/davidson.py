@@ -65,44 +65,38 @@ def get_extremal_eigenvalue(spo: SparsePauliOp, **kwargs) -> tuple[bool, float]:
         (may be ``False`` if Davidson fails to converge). ``eigenvalue`` is the most-negative
         eigenvalue of ``spo``.
     """
-    logicals, amps, exps = _reduce_operator(spo)
-    p = logicals.num_qubits
-    c = exps.shape[1]
+    reduced_op, c = _reduce_operator(spo)
+    p = reduced_op.num_qubits - c
 
-    # Each central generator flips a term's sign per sector; flip parity is a mod-2 matrix
-    # product giving the sign each term takes in each of the ``2^c`` sectors.
-    sector_bits = (np.arange(1 << c)[:, None] >> np.arange(c)) & 1  # (2^c, c)
-    sector_sign = 1 - 2 * ((sector_bits @ exps.T) & 1)  # (2^c, K)
-
-    # With no anticommuting pairs the operator is fully diagonal: each sector is a single number
-    # (the signed sum of coefficients), and the minimum over sectors is the answer.
     if p == 0:
-        result = True, float((sector_sign * amps.real).sum(axis=1).min())
-
-    # Small reduced operator -> diagonalize each sector densely and take
-    # overall minimum eigenvalue.
-    elif p + c <= _MAX_REDUCED_LOG2_DIM:
-        # Build the operator once; per sector only the coefficients change. ``SparsePauliOp`` folds
-        # the logical Paulis' phases into its coefficients, so scale that folded snapshot by the
-        # sector signs (real +-1, so this matches folding ``amps * signs`` directly).
-        logical = SparsePauliOp(logicals, amps)
-        base_coeffs = logical.coeffs.copy()
+        # Fully diagonal (only commuting generators): the answer is the smallest diagonal entry. A
+        # sparse build stays O(2^c) in memory (only c <= eigval_max_qubits reaches here).
+        diagonal = reduced_op.to_matrix(sparse=True, force_serial=True).diagonal()
+        result = True, float(diagonal.real.min())
+    elif reduced_op.num_qubits > _MAX_REDUCED_LOG2_DIM:
+        # Large, with anticommuting pairs -> hand the whole operator to Davidson.
+        result = _davidson_extremal_eigenvalue(reduced_op, **kwargs)
+    else:
+        # Small: reduced_op is block-diagonal over the 2^c commuting-Z sectors. Diagonalize the
+        # p-qubit block in each sector and take the overall minimum. A term's sign in a sector is -1
+        # to the parity of the trailing Z's (commuting generators) it carries.
+        paulis = reduced_op.paulis
+        commuting_gen_mask = paulis.z[:, p:]  # (K, c)
+        sector_bits = ((np.arange(1 << c)[:, None] >> np.arange(c)) & 1).astype(
+            np.uint8
+        )  # (2^c, c)
+        parity = (sector_bits @ commuting_gen_mask.T.astype(np.uint8)) & 1  # (2^c, K)
+        sector_sign = np.where(parity, np.int8(-1), np.int8(1))  # (2^c, K)
+        block = SparsePauliOp(
+            PauliList.from_symplectic(paulis.z[:, :p], paulis.x[:, :p]), reduced_op.coeffs
+        )
+        base_coeffs = block.coeffs.copy()
         lowest = 0.0
         for signs in sector_sign:
-            logical.coeffs = base_coeffs * signs
-            mat = logical.to_matrix()
+            block.coeffs = base_coeffs * signs
+            mat = block.to_matrix(force_serial=True)  # serial: this runs inside a process pool
             lowest = min(lowest, float(np.linalg.eigvalsh(mat)[0]))
         result = True, lowest
-
-    # Else solve iteratively. Each central generator is a ``Z`` on its own qubit (qubits
-    # ``p .. p + c - 1``): the resulting ``(p + c)``-qubit operator carries all sectors at once.
-    else:
-        # Fold the logical Paulis' phases into the coefficients first via ``SparsePauliOp``.
-        logical = SparsePauliOp(logicals, amps)
-        full_z = np.concatenate([logical.paulis.z, exps.astype(bool)], axis=1)
-        full_x = np.concatenate([logical.paulis.x, np.zeros_like(exps, dtype=bool)], axis=1)
-        reduced = SparsePauliOp(PauliList.from_symplectic(full_z, full_x), logical.coeffs)
-        result = _davidson_extremal_eigenvalue(reduced, **kwargs)
 
     return result
 
