@@ -14,11 +14,12 @@
 # If we ever publicly expose interfaces users can import from this module,
 # we should set up its RST file.
 
-"""Reduce a Hermitian Pauli sum to its logical form via symplectic reduction.
+"""Reduce a Hermitian Pauli sum to a smaller operator with the same eigenvalues.
 
-The terms are split into independent anticommuting pairs plus a commuting center by a symplectic
-Gram-Schmidt procedure over GF(2); see M. M. Wilde, "Logical operators of quantum codes",
-Phys. Rev. A 79, 062322 (2009), arXiv:0903.5256.
+Its terms are split into ``p`` independent anticommuting pairs plus ``c`` mutually commuting terms,
+so the sum acts on only ``p + c`` effective qubits instead of ``n``. The split uses the symplectic
+Gram-Schmidt of M. M. Wilde, "Logical operators of quantum codes", Phys. Rev. A 79, 062322 (2009),
+arXiv:0903.5256.
 """
 
 from __future__ import annotations
@@ -27,61 +28,70 @@ import numpy as np
 from qiskit.quantum_info import PauliList, SparsePauliOp
 
 
-def _reduce_operator(spo: SparsePauliOp) -> tuple[PauliList, np.ndarray, np.ndarray]:
-    """Reduce a Hermitian Pauli sum to its logical form on ``p + c`` generators.
+def _reduce_operator(spo: SparsePauliOp) -> tuple[SparsePauliOp, int]:
+    """Reduce ``spo`` to an operator with the same eigenvalues on fewer qubits.
 
-    Returns ``(logicals, amps, exps)``: for each of the ``K`` input terms, its logical Pauli on the
-    ``p`` anticommuting-pair qubits, its complex amplitude, and its ``c`` central-generator exponents
-    (a ``(K, c)`` matrix). The original operator is unitarily equivalent to the direct sum, over the
-    ``2^c`` central sign-sectors, of ``sum_k amps[k] * (+-1) * logicals[k]``.
+    Symplectic Gram-Schmidt splits the terms into ``p`` anticommuting generator pairs plus ``c``
+    mutually commuting generators. Returns ``(reduced_op, num_trailing_Zs)``:
+
+    - ``reduced_op``: a ``SparsePauliOp`` on ``p + c`` qubits with the same distinct eigenvalues as
+      ``spo``. Qubits ``0 .. p-1`` carry the pairs; the last ``c`` qubits carry the commuting
+      generators, each as a single-qubit ``Z``.
+    - ``num_trailing_Zs``: ``c``. Those commuting generators are conserved, so ``reduced_op`` is
+      block-diagonal over their ``2^c`` sign sectors.
     """
     paulis = spo.paulis
     coeffs = spo.coeffs
     n = paulis.num_qubits
-    vectors = np.hstack([paulis.z, paulis.x])
+    zx = np.hstack([paulis.z, paulis.x])
 
-    # Gram-Schmidt on a basis of the term span -> p anticommuting pairs + c commuting centrals.
-    _, span_basis = _xor_row_reduce(vectors)
-    span = PauliList.from_symplectic(span_basis[:, :n], span_basis[:, n:])
-    pair_gens, center = _symplectic_gram_schmidt(span)
-    p = len(pair_gens) // 2
+    # Reduce the terms to a basis (products of which give every original term), then split it into
+    # p anticommuting pairs + c commuting generators.
+    _, span_basis = _get_basis(paulis)
+    a_gens, b_gens, center = _symplectic_gram_schmidt(span_basis)
+    p = len(a_gens)
+    c = len(center)
 
-    # Row-reduce the centrals so a term's coefficient on central generator j is just its bit in that
-    # generator's pivot column (used below).
-    center_pivots, center_rref = _xor_row_reduce(np.hstack([center.z, center.x]))
+    # Put the commuting generators in echelon form so a term's coefficient on generator j is its bit
+    # in that generator's pivot column (used for the residual below).
+    center_pivots, center_gens = _get_basis(center)
+    pair_gens = a_gens + b_gens
+    generators = pair_gens + center_gens
 
-    # Generators A_0,B_0,...,A_{p-1},B_{p-1}, then centrals, as Hermitian Paulis (Y, not iXZ). On the
-    # p logical qubits A_i->X_i, B_i->Z_i; centrals act only through their per-sector sign.
-    pair_vecs = np.hstack([pair_gens.z, pair_gens.x])
-    gen_vecs = np.vstack([pair_vecs, center_rref])
-    gen_phys = PauliList.from_symplectic(gen_vecs[:, :n], gen_vecs[:, n:])
-    gen_log = _logical_generators(p, len(gen_phys))
+    # Which generators make up each term? For a pair, A_i (B_i) is present iff the term anticommutes
+    # with B_i (A_i). Commuting generators are read from the leftover bits at their pivot columns,
+    # after removing the pair part.
+    anticommutes = _commutation_matrix(paulis, generators, negate=True)  # (K, len(generators))
+    gen_mask = np.zeros_like(anticommutes)
+    gen_mask[:, 0:p] = anticommutes[:, p : 2 * p]
+    gen_mask[:, p : 2 * p] = anticommutes[:, 0:p]
+    pair_zx = np.hstack([pair_gens.z, pair_gens.x])
+    residual = zx ^ (np.matmul(gen_mask[:, : 2 * p], pair_zx, dtype=np.uint8) & 1).astype(bool)
+    gen_mask[:, 2 * p :] = residual[:, center_pivots]
 
-    # Decompose each term over the generators: P_k = scalar * product of the chosen generators.
-    # Pair coefficients follow from commutation -- A_i is present iff P_k anticommutes with B_i, and
-    # B_i iff P_k anticommutes with A_i. Central coefficients (commutation is blind to them) are the
-    # residual's bits in the central pivot columns, after removing the pair part.
-    coords = np.zeros((len(coeffs), len(gen_phys)), dtype=bool)
-    for i in range(p):
-        coords[:, 2 * i] = paulis.anticommutes(gen_phys[2 * i + 1])
-        coords[:, 2 * i + 1] = paulis.anticommutes(gen_phys[2 * i])
-    residual = vectors ^ ((coords[:, : 2 * p].astype(int) @ pair_vecs.astype(int)) & 1).astype(bool)
-    coords[:, 2 * p :] = residual[:, center_pivots]
+    # Reduced generators on p + c qubits: pair (A_q, B_q) -> (Z_q, X_q) on qubit q; commuting
+    # generator j -> Z on qubit p + j.
+    gens_reduced = _identities(len(generators), p + c)
+    q = np.arange(p)
+    gens_reduced.z[q, q] = True  # A_q -> Z_q
+    gens_reduced.x[p + q, q] = True  # B_q -> X_q
+    j = np.arange(c)
+    gens_reduced.z[2 * p + j, p + j] = True  # commuting generator j -> Z on qubit p + j
 
-    # Rebuild each term as the ordered product of its generators, physical and logical in lockstep;
-    # the phase relating P_k to that product is read from Qiskit (P_k . prod^dagger = omega * I).
+    # Product of each term's generators on n qubits (all generators, needed for the phase below) and
+    # on the p + c reduced qubits, in lockstep.
     prods = _identities(len(coeffs), n)
-    logicals = _identities(len(coeffs), p)
-    for i in range(len(gen_phys)):
-        mask = coords[:, i]
+    prods_reduced = _identities(len(coeffs), p + c)
+    for i in range(len(generators)):
+        mask = gen_mask[:, i]
         if mask.any():
-            prods[mask] = prods[mask].compose(gen_phys[i])
-            logicals[mask] = logicals[mask].compose(gen_log[i])
+            prods[mask] @= generators[i]
+            prods_reduced[mask] @= gens_reduced[i]
 
-    omega_phase = paulis.compose(prods.adjoint()).phase
+    # P_k = omega * prod, so P_k . prod^dagger = omega * I gives the phase.
+    omega_phase = (paulis @ prods.adjoint()).phase
     amps = coeffs * (-1j) ** omega_phase
-    exps = coords[:, 2 * p :].astype(int)  # (K, c) central-generator exponents
-    return logicals, amps, exps
+    return SparsePauliOp(prods_reduced, amps), c
 
 
 def _symplectic_gram_schmidt(paulis: PauliList) -> tuple[PauliList, PauliList, PauliList]:
