@@ -176,5 +176,4 @@ def _commutation_matrix(pl1: PauliList, pl2: PauliList, negate=False):
     b_dot_a = (np.asarray(pl1._z, dtype=np.uint8) @ np.asarray(pl2._x.T, dtype=np.uint8)) & 1
     if negate:
         return a_dot_b != b_dot_a
-    else:
-        return a_dot_b == b_dot_a
+    return a_dot_b == b_dot_a
