@@ -128,14 +128,13 @@ def _symplectic_gram_schmidt(paulis: PauliList) -> tuple[PauliList, PauliList, P
     return a_paulis, b_paulis, center
 
 
-def _xor_row_reduce(mat: np.ndarray) -> tuple[list[int], np.ndarray]:
-    """Reduced row echelon form of a boolean matrix over the two-element field (arithmetic is XOR).
+def _get_basis(paulis: PauliList) -> tuple[list[int], PauliList]:
+    """Reduce a ``PauliList`` to an independent generating subset, by row reduction mod 2 (XOR).
 
-    Returns ``(pivot_cols, basis)``: ``basis`` holds the nonzero reduced rows (a basis of the row
-    space), with ``basis[i]`` having its leading 1 in column ``pivot_cols[i]`` and that column cleared
-    from every other row.
+    Returns ``(pivot_cols, basis)``: ``basis`` is a ``PauliList`` whose symplectic vectors are the
+    reduced rows (an independent basis of the span); row ``i`` has its leading 1 at ``pivot_cols[i]``.
     """
-    work = mat.copy()
+    work = np.hstack([paulis.z, paulis.x])
     pivot_cols: list[int] = []
     row = 0
     for col in range(work.shape[1]):
@@ -152,7 +151,9 @@ def _xor_row_reduce(mat: np.ndarray) -> tuple[list[int], np.ndarray]:
         row += 1
         if row == len(work):
             break
-    return pivot_cols, work[:row]
+    zx = work[:row]
+    n = paulis.num_qubits
+    return pivot_cols, PauliList.from_symplectic(zx[:, :n], zx[:, n:])
 
 
 def _identities(count: int, num_qubits: int) -> PauliList:
