@@ -167,3 +167,10 @@ def _logical_generators(p: int, num_gens: int) -> PauliList:
     x[2 * j, j] = True
     z[2 * j + 1, j] = True
     return PauliList.from_symplectic(z, x)
+def _commutation_matrix(pl1: PauliList, pl2: PauliList, negate=False):
+    a_dot_b = (np.asarray(pl1._x, dtype=np.uint8) @ np.asarray(pl2._z.T, dtype=np.uint8)) & 1
+    b_dot_a = (np.asarray(pl1._z, dtype=np.uint8) @ np.asarray(pl2._x.T, dtype=np.uint8)) & 1
+    if negate:
+        return a_dot_b != b_dot_a
+    else:
+        return a_dot_b == b_dot_a
