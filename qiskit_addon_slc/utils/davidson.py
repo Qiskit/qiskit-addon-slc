@@ -91,7 +91,9 @@ def get_extremal_eigenvalue(spo: SparsePauliOp, **kwargs) -> tuple[bool, float]:
             PauliList.from_symplectic(paulis.z[:, :p], paulis.x[:, :p]), reduced_op.coeffs
         )
         base_coeffs = block.coeffs.copy()
-        lowest = 0.0
+        # Seed with +inf, not 0.0: a positive-definite operator has no sector minimum below zero, so
+        # seeding at 0.0 would clamp the result and report 0.0 instead of the true minimum.
+        lowest = float("inf")
         for signs in sector_sign:
             block.coeffs = base_coeffs * signs
             mat = block.to_matrix(force_serial=True)  # serial: this runs inside a process pool

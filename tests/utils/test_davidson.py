@@ -41,6 +41,11 @@ DENSE_OPERATORS = {
     "diagonal": SparsePauliOp(["ZZI", "IZZ", "ZIZ", "IIZ"], [0.5, -1.2, 0.3, 0.9]),
     "one_pair_plus_central": SparsePauliOp(["XI", "ZI", "IZ"], [0.7, -0.4, 1.1]),
     "mixed": SparsePauliOp(["XII", "ZII", "IXX", "IZZ", "IYI"], [1.0, 0.5, -0.3, 0.8, 0.6]),
+    # Positive-definite: a large identity term shifts the whole spectrum above zero, so the
+    # per-sector minimum must not be clamped at 0.0.
+    "positive_definite": SparsePauliOp(["XI", "ZI", "II"], [0.5, 0.5, 3.0]),
+    # Positive-definite and fully commuting -> takes the p == 0 diagonal path.
+    "positive_definite_diagonal": SparsePauliOp(["ZI", "IZ", "II"], [0.5, 0.25, 2.0]),
 }
 
 
