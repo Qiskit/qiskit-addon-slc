@@ -46,6 +46,11 @@ DENSE_OPERATORS = {
     "positive_definite": SparsePauliOp(["XI", "ZI", "II"], [0.5, 0.5, 3.0]),
     # Positive-definite and fully commuting -> takes the p == 0 diagonal path.
     "positive_definite_diagonal": SparsePauliOp(["ZI", "IZ", "II"], [0.5, 0.25, 2.0]),
+    # Multiples of the identity reduce to a 0-qubit operator; its single eigenvalue is the sum of
+    # the coefficients, which must survive the reduction.
+    "identity_only": SparsePauliOp(["II"], [-0.73]),
+    "identity_only_unsimplified": SparsePauliOp(["II", "II"], [-0.5, -0.23]),
+    "identity_only_positive": SparsePauliOp(["III"], [2.5]),
 }
 
 

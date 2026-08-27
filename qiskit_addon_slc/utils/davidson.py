@@ -68,7 +68,12 @@ def get_extremal_eigenvalue(spo: SparsePauliOp, **kwargs) -> tuple[bool, float]:
     reduced_op, c = _reduce_operator(spo)
     p = reduced_op.num_qubits - c
 
-    if p == 0:
+    if reduced_op.num_qubits == 0:
+        # ``spo`` was a multiple of the identity, so it reduces to a 0-qubit operator whose single
+        # eigenvalue is the sum of its coefficients. Handled separately because ``to_matrix()`` on a
+        # 0-qubit operator returns ``[[0]]``, dropping the coefficients entirely.
+        result = True, float(np.sum(reduced_op.coeffs).real)
+    elif p == 0:
         # Fully diagonal (only commuting generators): the answer is the smallest diagonal entry. A
         # sparse build stays O(2^c) in memory (only c <= eigval_max_qubits reaches here).
         diagonal = reduced_op.to_matrix(sparse=True, force_serial=True).diagonal()
