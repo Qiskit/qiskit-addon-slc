@@ -113,6 +113,11 @@ def _davidson_extremal_eigenvalue(spo: SparsePauliOp, **kwargs) -> tuple[bool, f
 
     The default ``tol`` is tight because the eigenvalue error runs well above ``tol`` (roughly
     ``tol`` divided by the spectral gap, which is small for these near-degenerate commutators).
+
+    Note that this default only applies to callers that do not pass ``tol`` themselves. The addon's
+    own bounds code always does: :func:`~qiskit_addon_slc.bounds.forward.time_evolved_norm_forward`
+    forwards its ``atol_eigenvalue`` argument (default ``1e-8``) as ``tol``, so tightening the
+    accuracy of the bounds computation means passing a smaller ``atol_eigenvalue`` there.
     """
     default_kwargs = {
         "tol": 1e-10,
