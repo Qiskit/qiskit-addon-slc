@@ -16,6 +16,7 @@ classifiers = [
     "Natural Language :: English",
     "Operating System :: MacOS",
     "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -27,11 +28,11 @@ requires-python = ">=3.10"
 
 dependencies = [
     "matplotlib>=3.10.5, <4",
-    "pyscf>=2.10, <3",
     "qiskit[visualization]>=2.2, <3",
     "pauli-prop>=0.1.0, <1",
     "rustworkx",
-    "samplomatic>=0.16.0"
+    "samplomatic>=0.16.0",
+    "scipy>=1.11",
 ]
 
 [project.optional-dependencies]
