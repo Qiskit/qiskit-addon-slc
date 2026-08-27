@@ -1,0 +1,11 @@
+---
+fixes:
+  - |
+    Fixed :func:`qiskit_addon_slc.utils.get_extremal_eigenvalue` returning ``0.0``
+    for operators whose spectrum lies entirely above zero. The running minimum of
+    the per-sector diagonalization was seeded at ``0.0``, which clamped the result
+    for positive-definite inputs.
+  - |
+    Fixed :func:`qiskit_addon_slc.utils.get_extremal_eigenvalue` returning ``0.0``
+    for operators that are a multiple of the identity, instead of the sum of their
+    coefficients.
