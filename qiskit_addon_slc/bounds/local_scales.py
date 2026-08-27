@@ -40,7 +40,7 @@ def compute_local_scales(
     *,
     sampling_cost_budget: float = np.inf,
     bias_tolerance: float = 0.0,
-) -> tuple[Bounds, float, float]:
+) -> tuple[dict[str, np.ndarray], float, float]:
     r"""Computes the ``local_scales`` argument to a :class:`~samplomatic.samplex.Samplex`.
 
     This ``local_scales`` argument is used to specify which individual error terms to mitigate.

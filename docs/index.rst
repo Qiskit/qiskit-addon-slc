@@ -21,7 +21,7 @@ A simple guide to help you get started quickly with this package is available in
 Use case examples
 -----------------
 
-This technique has been used to improve the sampling cost of PEC on a 20-qubit mirrored Ising circuit `[tutorial] <https://quantum.cloud.ibm.com/docs/en/tutorials/pec-with-shaded-lightcones>`__.
+This technique has been used to lower the sampling cost of probabilistic error cancellation (PEC) for operator Loschmidt echo experiments with 56 qubits on an IBM Heron processor. `[2] <ref2_>`__.
 
 Technical discussion
 --------------------
@@ -115,6 +115,10 @@ References
 .. _ref1:
    
 1. Andrew Eddins, et al., `Lightcone shading for classically accelerated quantum error mitigation <https://arxiv.org/abs/2409.04401v1>`_, arXiv:2409.04401v1 [quant-ph].
+
+.. _ref2:
+
+2. Samantha V. Barron, et al., `Observable Estimation in the Absence of Classical Verification <https://arxiv.org/pdf/2607.25998>`_, arXiv:2607.25998 [quant-ph].
 
 .. toctree::
    :hidden:
