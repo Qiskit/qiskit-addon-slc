@@ -3,3 +3,7 @@ fixes:
   - |
     Fixed :func:`qiskit_addon_slc.utils.get_extremal_eigenvalue` to properly handle
     operators with positive trace (does not affect normal SLC computations).
+  - |
+    Lowered default `atol_eigenvalue` from 1e-8 to 1e-10 in `compute_forward_bounds`,
+    `time_evolved_norm_forward` as old value was occasionally producing significant
+    inaccuracy.
