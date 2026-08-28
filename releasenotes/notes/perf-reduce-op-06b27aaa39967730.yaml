@@ -1,0 +1,7 @@
+---
+features:
+  - |
+    Faster operator-norm computations in some cases. The routine now first tries to reduce
+    the operator to fewer qubits, applicable when the spectrum consists of repeated eigenvalues.
+    Thresholds on the choice of dense vs sparse (Davidson) methods have been updated accordingly
+    for performance.
