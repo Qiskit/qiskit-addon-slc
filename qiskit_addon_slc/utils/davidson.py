@@ -69,9 +69,8 @@ def get_extremal_eigenvalue(spo: SparsePauliOp, **kwargs) -> tuple[bool, float]:
     p = reduced_op.num_qubits - c
 
     if reduced_op.num_qubits == 0:
-        # ``spo`` was a multiple of the identity, so it reduces to a 0-qubit operator whose single
-        # eigenvalue is the sum of its coefficients. Handled separately because ``to_matrix()`` on a
-        # 0-qubit operator returns ``[[0]]``, dropping the coefficients entirely.
+        # Edge case: ``spo`` was multiple of identity. Handled because ``to_matrix()`` on
+        # 0-qubit operator discards coefficients.
         result = True, float(np.sum(reduced_op.coeffs).real)
     elif p == 0:
         # Fully diagonal (only commuting generators): the answer is the smallest diagonal entry. A
@@ -96,9 +95,7 @@ def get_extremal_eigenvalue(spo: SparsePauliOp, **kwargs) -> tuple[bool, float]:
             PauliList.from_symplectic(paulis.z[:, :p], paulis.x[:, :p]), reduced_op.coeffs
         )
         base_coeffs = block.coeffs.copy()
-        # Seed with +inf, not 0.0: a positive-definite operator has no sector minimum below zero, so
-        # seeding at 0.0 would clamp the result and report 0.0 instead of the true minimum.
-        lowest = float("inf")
+        lowest = np.inf
         for signs in sector_sign:
             block.coeffs = base_coeffs * signs
             mat = block.to_matrix(force_serial=True)  # serial: this runs inside a process pool
@@ -113,11 +110,6 @@ def _davidson_extremal_eigenvalue(spo: SparsePauliOp, **kwargs) -> tuple[bool, f
 
     The default ``tol`` is tight because the eigenvalue error runs well above ``tol`` (roughly
     ``tol`` divided by the spectral gap, which is small for these near-degenerate commutators).
-
-    Note that this default only applies to callers that do not pass ``tol`` themselves. The addon's
-    own bounds code always does: :func:`~qiskit_addon_slc.bounds.forward.time_evolved_norm_forward`
-    forwards its ``atol_eigenvalue`` argument (default ``1e-8``) as ``tol``, so tightening the
-    accuracy of the bounds computation means passing a smaller ``atol_eigenvalue`` there.
     """
     default_kwargs = {
         "tol": 1e-10,
