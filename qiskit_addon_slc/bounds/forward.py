@@ -55,7 +55,7 @@ def time_evolved_norm_forward(
     eigval_max_qubits: int = np.iinfo(np.uint).max,
     comm_norm_order: int = 2,
     atol_simplify: float = 1e-8,
-    atol_eigenvalue: float = 1e-8,
+    atol_eigenvalue: float = 1e-10,
 ) -> CommutatorBounds:
     """Compute the bound of an error Pauli term evolved forward to the target observable.
 
@@ -218,7 +218,7 @@ def compute_forward_bounds(
     eigval_max_qubits: int = 14,
     atol: float = 1e-8,
     atol_simplify: float = 1e-8,
-    atol_eigenvalue: float = 1e-8,
+    atol_eigenvalue: float = 1e-10,
     **kwargs,
 ) -> Bounds:
     r"""Compute the forward-evolved unequal-time commutator bounds.
@@ -284,7 +284,7 @@ def compute_forward_bounds(
     if (
         not np.isclose(atol, 1e-8, atol=1e-9)
         and np.isclose(atol_simplify, 1e-8, atol=1e-9)
-        and np.isclose(atol_eigenvalue, 1e-8, atol=1e-9)
+        and np.isclose(atol_eigenvalue, 1e-10, atol=1e-11)
     ):
         # the user specified the deprecated `atol` argument but neither of the other two new
         # replacement arguments
