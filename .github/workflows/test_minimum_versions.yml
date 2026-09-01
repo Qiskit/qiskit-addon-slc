@@ -26,6 +26,7 @@ jobs:
         uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
+      - uses: dtolnay/rust-toolchain@stable
       - name: Install dependencies (minimum versions)
         shell: bash
         run: |
@@ -33,6 +34,9 @@ jobs:
           python -m pip install extremal-python-dependencies==0.1.0
           pip install "tox==$(extremal-python-dependencies get-tox-minversion)"
           extremal-python-dependencies pin-dependencies-to-minimum --inplace
+      - name: Build package
+        run: |
+          pip install -e .
       - name: Test using tox environment
         run: |
           tox -e py --parallel --parallel-no-spinner

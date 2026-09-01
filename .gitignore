@@ -134,3 +134,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Rust / compiled extension artifacts
+/target/
+*.pyd
+*.pdb

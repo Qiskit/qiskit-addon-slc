@@ -1,6 +1,6 @@
 [build-system]
-requires = ["hatchling>=1.27.0"]
-build-backend = "hatchling.build"
+requires = ["maturin>=1.9,<2.0"]
+build-backend = "maturin"
 
 [project]
 name = "qiskit-addon-slc"
@@ -12,10 +12,10 @@ license-files = ["LICENSE.txt"]
 classifiers = [
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: Apache Software License",
     "Natural Language :: English",
     "Operating System :: MacOS",
     "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -27,7 +27,6 @@ requires-python = ">=3.10"
 
 dependencies = [
     "matplotlib>=3.10.5, <4",
-    "pyscf>=2.10, <3",
     "qiskit[visualization]>=2.2, <3",
     "pauli-prop>=0.1.0, <1",
     "rustworkx",
@@ -93,13 +92,13 @@ parallel = true
 fail_under = 65
 show_missing = true
 
-[tool.hatch.build.targets.wheel]
-only-include = [
-    "qiskit_addon_slc",
-]
-
-[tool.hatch.metadata]
-allow-direct-references = true
+[tool.maturin]
+bindings = "pyo3"
+python-source = "."
+features = ["pyo3/extension-module"]
+locked = true
+profile = "release"
+module-name = "qiskit_addon_slc._accelerate"
 
 [tool.mypy]
 python_version = "3.10"
@@ -110,6 +109,7 @@ ignore_missing_imports = true
 
 [tool.pylint.main]
 py-version = "3.10"
+ignore-patterns = [".*\\.pyi"]
 
 [tool.pylint."messages control"]
 disable = ["all"]

@@ -1,0 +1,17 @@
+---
+features:
+  - |
+    Added support for Windows. The package now installs and runs on Windows in
+    addition to Linux and macOS, and the test suite is exercised on
+    ``windows-latest`` in CI.
+  - |
+    The Davidson eigensolver used internally by
+    :func:`~qiskit_addon_slc.utils.davidson.get_extremal_eigenvalue` is now
+    provided by a compiled Rust extension (built on ``nalgebra``). It requires no
+    BLAS/LAPACK, so the package ships self-contained binary wheels.
+upgrade:
+  - |
+    ``pyscf`` is no longer a dependency. The Davidson eigensolver behind
+    :func:`~qiskit_addon_slc.utils.davidson.get_extremal_eigenvalue` was
+    previously provided by ``pyscf``, which had no Windows wheel and could not be
+    built from source on Windows; it is now the compiled Rust extension.
