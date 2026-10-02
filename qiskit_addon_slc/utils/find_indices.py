@@ -37,6 +37,34 @@ def find_indices(
        or deprecation when the same functionality is supported natively by the Qiskit SDK. See
        `this issue <https://github.com/Qiskit/qiskit/issues/14558>`_ for more details.
 
+    A sequence of bits maps to a list of indices, in the order the bits were given:
+
+    .. plot::
+       :include-source:
+       :nofigs:
+       :context: reset
+
+       >>> from qiskit import QuantumCircuit
+       >>> from qiskit_addon_slc.utils import find_indices
+
+       >>> circuit = QuantumCircuit(3)
+       >>> find_indices(circuit, [circuit.qubits[2], circuit.qubits[0]])
+       [2, 0]
+
+    A single bit maps to a single index, and an instruction to the indices of the qubits it acts on:
+
+    .. plot::
+       :include-source:
+       :nofigs:
+       :context:
+
+       >>> find_indices(circuit, circuit.qubits[1])
+       1
+
+       >>> _ = circuit.cx(2, 0)
+       >>> find_indices(circuit, circuit.data[0])
+       [2, 0]
+
     Args:
         circuit: the quantum circuit whose qubit indices to find.
         bits_or_instruction: the bits whose indices to find. If this is a
