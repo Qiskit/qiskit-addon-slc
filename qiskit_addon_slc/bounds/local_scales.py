@@ -40,6 +40,7 @@ def compute_local_scales(
     *,
     sampling_cost_budget: float = np.inf,
     bias_tolerance: float = 0.0,
+    multiple_observables: bool = False,
 ) -> tuple[dict[str, np.ndarray], float, float]:
     r"""Computes the ``local_scales`` argument to a :class:`~samplomatic.samplex.Samplex`.
 
@@ -60,6 +61,11 @@ def compute_local_scales(
         noise_rates: the learned noise model rates.
         sampling_cost_budget: the maximum sampling cost to allow.
         bias_tolerance: the maximum bias to tolerate.
+        multiple_observables: whether multiple observables will be computed from a single dataset.
+            In this case, Paulis are injected for all errors (as in standard PEC) and the minus
+            signs of unmitigated low-priority errors are ignored, which effectively doubles their
+            error rates. Setting this to ``True`` accounts for that by using a greedy
+            "value density" prioritization instead of the default one.
 
     Returns:
         A tuple of length 3, the items of which are:
@@ -113,8 +119,24 @@ def compute_local_scales(
 
     # Compute the priority
     exp_rates_flat = np.exp(-2 * rates_flat_np)
-    bias_bounds_flat = comm_bounds_flat_np * (1 - exp_rates_flat) / 2
-    priority_flat = comm_bounds_flat_np * exp_rates_flat
+
+    if multiple_observables:
+        # When computing multiple observables from one dataset, Paulis are injected for all errors
+        # as in standard PEC (i.e. without SLC). High-priority errors selected for mitigation are
+        # processed as in standard PEC. For low-priority errors not selected, the associated minus
+        # signs are ignored. This means the injected Paulis act as noise instead of antinoise,
+        # effectively doubling the error rates of the unmitigated errors. This discrete version of
+        # the prioritization seems to be the knapsack problem. We can just do a greedy
+        # prioritization based on "value density":
+        bias_bounds_flat = comm_bounds_flat_np * (1 - exp_rates_flat**2) / 2
+        priority_flat = np.zeros_like(bias_bounds_flat)
+        # When rates_flat_np is exactly 0, we know that the numerator is also exactly zero. So in
+        # the line below, we only update those values where they are non-zero.
+        nonzero = rates_flat_np != 0
+        priority_flat[nonzero] = bias_bounds_flat[nonzero] / rates_flat_np[nonzero]
+    else:
+        bias_bounds_flat = comm_bounds_flat_np * (1 - exp_rates_flat) / 2
+        priority_flat = comm_bounds_flat_np * exp_rates_flat
 
     # Find sorting according to priority (in decreasing order, hence [::-1])
     by_decr_priority = np.argsort(priority_flat)[::-1]

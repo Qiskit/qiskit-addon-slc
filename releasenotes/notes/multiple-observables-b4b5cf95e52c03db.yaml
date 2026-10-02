@@ -1,0 +1,11 @@
+---
+features:
+  - |
+    Added the ``multiple_observables`` argument to
+    :func:`~qiskit_addon_slc.bounds.compute_local_scales`. Set this to ``True``
+    when computing multiple observables from a single dataset. In that scenario,
+    Paulis are injected for all errors (as in standard PEC) and the minus signs
+    associated with unmitigated low-priority errors are ignored, which
+    effectively doubles their error rates. This setting accounts for that by
+    prioritizing errors greedily based on their "value density" instead of using
+    the default prioritization.
