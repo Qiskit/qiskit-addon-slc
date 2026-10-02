@@ -39,3 +39,11 @@ jobs:
         shell: bash
         run: |
           tox -e py --parallel --parallel-no-spinner
+      - name: Run doctests
+        shell: bash
+        run: |
+          tox -e py-doctest
+      - name: Run notebook tests
+        shell: bash
+        run: |
+          tox -e py-notebook
