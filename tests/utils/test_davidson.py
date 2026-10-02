@@ -66,7 +66,6 @@ def test_exact_paths_match_dense(name: str) -> None:
 def test_iterative_path_matches_dense(monkeypatch: pytest.MonkeyPatch) -> None:
     """Force the iterative fallback (via a low cutoff) and check it matches dense diagonalization."""
     monkeypatch.setattr(davidson, "_MAX_REDUCED_LOG2_DIM", 1)
-    np.random.seed(0)  # the Davidson initial guess is random
     # p = 1 (X0, Z0 anticommute), c = 2 (IXX, IZZ central) -> p + c = 3 > cutoff -> iterative.
     spo = SparsePauliOp(["XII", "ZII", "IXX", "IZZ"], [1.0, 0.5, -0.3, 0.8])
     converged, eigval = get_extremal_eigenvalue(spo, tol=1e-10)

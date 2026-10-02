@@ -2,7 +2,7 @@
 <div align="left">
 
   [![Release](https://img.shields.io/pypi/v/qiskit-addon-slc.svg?label=Release)](https://github.com/Qiskit/qiskit-addon-slc/releases)
-  ![Platform](https://img.shields.io/badge/%F0%9F%92%BB%20Platform-Linux%20%7C%20macOS-informational)
+  ![Platform](https://img.shields.io/badge/%F0%9F%92%BB%20Platform-Linux%20%7C%20macOS%20%7C%20Windows-informational)
   [![Python](https://img.shields.io/pypi/pyversions/qiskit-addon-slc?label=Python&logo=python)](https://www.python.org/)
   [![Qiskit](https://img.shields.io/badge/Qiskit%20-%20%3E%3D2.2%20-%20%236133BD?logo=Qiskit)](https://github.com/Qiskit/qiskit)
 <br />
@@ -86,17 +86,16 @@ Shaded lightcones are calculated and used in 5 steps:
 
 - Parallel asynchronous bound computation
 - [Rust-accelerated Pauli propagation](https://github.com/Qiskit/pauli-prop)
+- Rust-accelerated eigenvalue computation for computing forward bounds
 - Permits ahead-of-time bound computation (i.e. prior to the actual noise learning)
 
 #### Known issues
 
-- Windows not supported
 - `InjectNoise(site="before")` not supported
 - Does not support fine-grained bound merging
 
 #### Future work
 
-- Rust-accelerated eigenvalue computation for computing forward bounds
 - Additional guides coming soon
 
 ----------------------------------------------------------------------------------------------------

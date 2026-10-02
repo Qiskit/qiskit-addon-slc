@@ -18,12 +18,13 @@
 
 from __future__ import annotations
 
+import warnings
 from typing import cast
 
 import numpy as np
-import pyscf
 from qiskit.quantum_info import PauliList, SparsePauliOp
 
+from .. import _accelerate
 from .reduce_op import _reduce_operator
 
 # Largest ``p + c`` (log2 of the reduced-operator size) handled by dense diagonalization; above this
@@ -35,7 +36,15 @@ from .reduce_op import _reduce_operator
 _MAX_REDUCED_LOG2_DIM = 8
 
 
-def get_extremal_eigenvalue(spo: SparsePauliOp, **kwargs) -> tuple[bool, float]:
+def get_extremal_eigenvalue(
+    spo: SparsePauliOp,
+    *,
+    tol: float = 1e-10,
+    max_cycle: int = 500,
+    max_space: int = 12,
+    lindep: float = 1e-11,
+    **kwargs,
+) -> tuple[bool, float]:
     """Compute the spectral norm of a Hermitian Pauli operator (as a signed extremal eigenvalue).
 
     Given a Hermitian operator written as a weighted sum of Paulis, ``C = sum_k a_k P_k``, this
@@ -49,22 +58,32 @@ def get_extremal_eigenvalue(spo: SparsePauliOp, **kwargs) -> tuple[bool, float]:
     number of independent anticommuting pairs the Paulis generate and ``c`` counts the remaining
     commuting directions. When this reduced operator is small enough it is diagonalized densely,
     giving a result exact to machine precision. Otherwise, the reduced operator is instead solved
-    with an iterative eigensolver (Davidson). This path is accurate but not exact, and the ``kwargs``
-    below affect only it.
+    with the compiled Rust Davidson solver (a diagonally-preconditioned Davidson iteration). This
+    path is accurate but not exact, and the arguments below affect only it.
 
     Args:
         spo: the Hermitian operator whose most-negative eigenvalue (and hence spectral norm) to
             compute.
-        kwargs: keyword arguments for the iterative fallback,
-            :func:`~pyscf.lib.linalg_helper.davidson1` (defaults: ``tol=1e-10``, ``max_cycle=500``,
-            ``max_space=12``, ``lindep=1e-11``, ``max_memory=2000``; anything else falls back to
-            PySCF's own defaults). Ignored by the exact fast path.
+        tol: the convergence threshold on the residual norm of the iterative solver.
+        max_cycle: the maximum number of iterations of the iterative solver.
+        max_space: the maximum size of the subspace built up by the iterative solver.
+        lindep: the threshold below which a new subspace vector is considered linearly dependent on
+            the existing subspace (and, thus, discarded).
+        kwargs: **ignored!** Any additional keyword arguments are parsed for backwards compatibility
+            but do not have any effect at runtime and, thus, are being ignored!
 
     Returns:
         A ``(converged, eigenvalue)`` pair. ``converged`` reports whether the computation succeeded
         (may be ``False`` if Davidson fails to converge). ``eigenvalue`` is the most-negative
         eigenvalue of ``spo``.
     """
+    if len(kwargs) > 0:
+        warnings.warn(
+            f"These keyword arguments do not have any effect and are ignored: {kwargs}",
+            category=UserWarning,
+            stacklevel=2,
+        )
+
     reduced_op, c = _reduce_operator(spo)
     p = reduced_op.num_qubits - c
 
@@ -79,7 +98,13 @@ def get_extremal_eigenvalue(spo: SparsePauliOp, **kwargs) -> tuple[bool, float]:
         result = True, float(diagonal.real.min())
     elif reduced_op.num_qubits > _MAX_REDUCED_LOG2_DIM:
         # Large, with anticommuting pairs -> hand the whole operator to Davidson.
-        result = _davidson_extremal_eigenvalue(reduced_op, **kwargs)
+        result = _davidson_extremal_eigenvalue(
+            reduced_op,
+            tol=tol,
+            max_cycle=max_cycle,
+            max_space=max_space,
+            lindep=lindep,
+        )
     else:
         # Small: reduced_op is block-diagonal over the 2^c commuting-Z sectors. Diagonalize the
         # p-qubit block in each sector and take the overall minimum. A term's sign in a sector is -1
@@ -105,42 +130,62 @@ def get_extremal_eigenvalue(spo: SparsePauliOp, **kwargs) -> tuple[bool, float]:
     return result
 
 
-def _davidson_extremal_eigenvalue(spo: SparsePauliOp, **kwargs) -> tuple[bool, float]:
-    """Iterative Davidson fallback.
+def _davidson_extremal_eigenvalue(
+    spo: SparsePauliOp,
+    *,
+    tol: float,
+    max_cycle: int,
+    max_space: int,
+    lindep: float,
+) -> tuple[bool, float]:
+    """Iterative Davidson fallback, dispatched to the compiled Rust solver.
 
     The default ``tol`` is tight because the eigenvalue error runs well above ``tol`` (roughly
     ``tol`` divided by the spectral gap, which is small for these near-degenerate commutators).
     """
-    default_kwargs = {
-        "tol": 1e-10,
-        "max_cycle": 500,
-        "max_space": 12,
-        "lindep": 1e-11,
-        "max_memory": 2000,
-    }
-    default_kwargs.update(kwargs)
+    spmat = spo.to_matrix(sparse=True, force_serial=True).tocsr()
+    dim = spmat.shape[0]
+    data = spmat.data.astype(np.complex128)
+    diag = spmat.diagonal().astype(np.complex128)
+    seed = _initial_guess((dim,)).astype(np.complex128)
 
-    spmat = spo.to_matrix(sparse=True, force_serial=True)
-    diag = spmat.diagonal()
-
-    def precond(dx, e, _):
-        x = diag - e
-        x[np.abs(x) < default_kwargs["tol"]] = default_kwargs["tol"]
-        return dx / x
-
-    converged, e, _ = pyscf.lib.davidson1(
-        lambda vecs: [spmat.dot(v) for v in vecs],
-        [_random_initial_guess(spmat.shape)],
-        precond,
-        **default_kwargs,
+    return _accelerate.davidson_smallest(
+        spmat.indptr.astype(np.int64),
+        spmat.indices.astype(np.int64),
+        np.ascontiguousarray(data.real),
+        np.ascontiguousarray(data.imag),
+        np.ascontiguousarray(diag.real),
+        np.ascontiguousarray(diag.imag),
+        np.ascontiguousarray(seed.real),
+        np.ascontiguousarray(seed.imag),
+        dim,
+        float(tol),
+        int(max_cycle),
+        int(max_space),
+        float(lindep),
     )
-    return bool(np.atleast_1d(converged)[0]), float(e[0])
 
 
-def _random_initial_guess(shape: tuple[int, ...]) -> np.ndarray:
-    """A random unit-norm complex vector of length ``shape[0]``."""
+def _initial_guess(shape: tuple[int, ...]) -> np.ndarray:
+    """Produces a deterministic normalized starting vector of the requested shape.
+
+    A fixed-seed local generator is used so that the
+    Davidson iteration is reproducible: the same operator always yields the same result, independent
+    of any surrounding random state. A pseudo-random (rather than constant) vector is used to avoid
+    initial guesses that are accidentally orthogonal to the target eigenvector.
+
+    Args:
+        shape: the requested shape.
+
+    Returns:
+        A unit-norm array of complex values with their real and imaginary parts lying in the interval
+        ``[0, 1)``.
+    """
+    rng = np.random.default_rng(0)
+
     norm = 0.0
     while norm == 0:
-        x = np.random.rand(shape[0]) + 1.0j * np.random.rand(shape[0])
+        x = rng.random(shape[0]) + 1.0j * rng.random(shape[0])
         norm = cast(float, np.linalg.norm(x))
+
     return x / norm
