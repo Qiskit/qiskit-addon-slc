@@ -144,8 +144,11 @@ def compute_local_scales(
     # respective index of `bias_before_mitigating`
     bias_remaining = 0 if np.all(mask) else bias_before_mitigating[np.sum(mask)]
 
-    # The sampling cost is found at the index of last term being masked
-    sampling_cost = samp_cost_accum[mask][-1]
+    # The sampling cost is found at the index of last term being masked. When no term gets mitigated
+    # at all -- because the budget does not even cover the cheapest one, because the bias is already
+    # within tolerance, or because every bound is zero -- the overhead is that of not mitigating
+    # anything, which is `exp(4 * 0) = 1`.
+    sampling_cost = samp_cost_accum[mask][-1] if np.any(mask) else 1.0
 
     # Undo the by-priority-sorting of mask
     mask = mask[undo_sort_decr]

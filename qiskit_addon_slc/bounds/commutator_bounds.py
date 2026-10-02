@@ -48,6 +48,14 @@ Bounds = dict[str, PauliLindbladMap]
 
 LOGGER = logging.getLogger(__name__)
 
+# The default cap on the number of operator terms tracked during a Pauli evolution.
+#
+# This must stay a realistic number rather than something nominally "unlimited" such as
+# ``np.iinfo(np.uint).max``: :func:`~pauli_prop.propagation.propagate_through_rotation_gates` treats
+# the cap as a *capacity* and pre-allocates it, so a value of that size asks the allocator for
+# terabytes and aborts the process rather than raising.
+_DEFAULT_EVOLUTION_MAX_TERMS: int = 1_000_000
+
 
 class CommutatorBounds(NamedTuple):
     """A dataclass to store metadata about the computed commutator bounds."""

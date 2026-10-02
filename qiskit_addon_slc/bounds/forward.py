@@ -39,7 +39,12 @@ from qiskit.utils import deprecate_arg
 
 from .. import globals as slc_globals
 from ..utils import get_extremal_eigenvalue, remove_measure
-from .commutator_bounds import Bounds, CommutatorBounds, compute_bounds
+from .commutator_bounds import (
+    _DEFAULT_EVOLUTION_MAX_TERMS,
+    Bounds,
+    CommutatorBounds,
+    compute_bounds,
+)
 from .light_cone import LightCone
 
 LOGGER = logging.getLogger(__name__)
@@ -51,7 +56,7 @@ def time_evolved_norm_forward(
     gates: RotationGates,
     observable: Pauli,
     *,
-    evolution_max_terms: int = np.iinfo(np.uint).max,
+    evolution_max_terms: int = _DEFAULT_EVOLUTION_MAX_TERMS,
     eigval_max_qubits: int = np.iinfo(np.uint).max,
     comm_norm_order: int = 2,
     atol_simplify: float = 1e-8,
@@ -214,7 +219,7 @@ def compute_forward_bounds(
     /,
     observable: Pauli | PauliList | SparseObservable | SparsePauliOp,
     *,
-    evolution_max_terms: int = 1_000_000,
+    evolution_max_terms: int = _DEFAULT_EVOLUTION_MAX_TERMS,
     eigval_max_qubits: int = 14,
     atol: float = 1e-8,
     atol_simplify: float = 1e-8,
