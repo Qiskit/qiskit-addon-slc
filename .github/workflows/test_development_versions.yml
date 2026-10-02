@@ -64,10 +64,16 @@ jobs:
         shell: bash
         run: >-
           extremal-python-dependencies pin-dependencies --inplace
-          "qiskit @ file:$(echo qiskit/dist/*.whl)"
+          "qiskit[visualization] @ file:$(echo qiskit/dist/*.whl)"
           "qiskit-ibm-runtime @ file:$(echo qiskit-ibm-runtime/dist/*.whl)"
           "samplomatic @ file:$(echo samplomatic/dist/*.whl)"
           "qiskit-addon-utils @ file:$(echo qiskit-addon-utils/dist/*.whl)"
       - name: Test using tox environment
         run: |
           tox -e py --parallel --parallel-no-spinner
+      - name: Run doctests
+        run: |
+          tox -e py-doctest
+      - name: Run notebook tests
+        run: |
+          tox -e py-notebook

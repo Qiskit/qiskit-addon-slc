@@ -41,6 +41,17 @@ def overlay_bounds_onto_circuit(
     Those boxes are replaced by visual representations of the computed bounds for Pauli errors of
     their respective support (see also :func:`accumulate_filtered_bounds`).
 
+    The returned circuit is meant for rendering only; its instructions are placeholders carrying
+    bound values rather than executable gates.
+
+    The ``"max_bound"`` metadata entry sets the upper end of the color scale used by
+    :func:`render_bounds`. It starts from the theoretical maximum of :math:`2.0` and only grows, so
+    it stays at :math:`2.0` whenever every computed bound is tighter than that.
+
+    .. seealso::
+       :func:`.draw_shaded_lightcone` for a runnable example of the full pipeline, as well as
+       :func:`.accumulate_filtered_bounds` and :func:`.render_bounds`.
+
     Args:
         pauli_bounds: the accumulated and filtered bounds.
         circuit: the circuit on which to overlay the bounds.
