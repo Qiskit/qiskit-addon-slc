@@ -40,6 +40,7 @@ def compute_local_scales(
     *,
     sampling_cost_budget: float = np.inf,
     bias_tolerance: float = 0.0,
+    apply_in_post: bool = False,
 ) -> tuple[dict[str, np.ndarray], float, float]:
     r"""Computes the ``local_scales`` argument to a :class:`~samplomatic.samplex.Samplex`.
 
@@ -60,11 +61,34 @@ def compute_local_scales(
         noise_rates: the learned noise model rates.
         sampling_cost_budget: the maximum sampling cost to allow.
         bias_tolerance: the maximum bias to tolerate.
+        apply_in_post: whether SLC will be applied in post-processing rather than at sampling time.
+            By default (``False``), the returned ``local_scales`` are provided as an input to the
+            :class:`~samplomatic.samplex.Samplex`, such that Paulis are only injected for the error
+            terms selected for mitigation. Set this to ``True`` when the experiment is instead run as
+            standard PEC (i.e. Paulis are injected for all error terms) and SLC is applied to the
+            resulting data afterwards. This is necessary whenever the error terms to mitigate are
+            not known at the time of the experiment, for example, when computing multiple
+            observables (each with its own shaded lightcone) from a single dataset, or when
+            computing even a single observable retroactively from existing PEC data.
+
+            In this setting, the minus signs of the error terms which are not selected for
+            mitigation are ignored. Their injected Paulis therefore act as noise rather than
+            antinoise, effectively doubling their error rates. Setting this to ``True`` accounts for
+            that by ranking the error terms greedily by their "value density" (i.e., their bias
+            bound divided by their noise rate) instead of using the default prioritization.
+
+            .. warning::
+              When this is ``True``, the returned ``local_scales`` must **not** be provided to the
+              :class:`~samplomatic.samplex.Samplex`, since the experiment must inject Paulis for all
+              error terms. Instead, they specify which error terms' signs to apply when processing
+              the experiment's results. Providing them to the samplex silently yields wrong
+              results.
 
     Returns:
         A tuple of length 3, the items of which are:
         - the ``local_scales`` dictionary to be provided as the direct input to the
-          :meth:`samplomatic.samplex.Samplex.inputs`.
+          :meth:`samplomatic.samplex.Samplex.inputs` (unless ``apply_in_post`` is ``True``, in which
+          case it is used in post-processing instead).
         - the sampling cost overhead (:math:`\gamma^2`) required to perform the sampling of
           ``local_scales``.
         - the remaining bias on expectation values computed with these bounds.
@@ -113,8 +137,24 @@ def compute_local_scales(
 
     # Compute the priority
     exp_rates_flat = np.exp(-2 * rates_flat_np)
-    bias_bounds_flat = comm_bounds_flat_np * (1 - exp_rates_flat) / 2
-    priority_flat = comm_bounds_flat_np * exp_rates_flat
+
+    if apply_in_post:
+        # When SLC is applied in post-processing, Paulis are injected for all errors as in standard
+        # PEC (i.e. without SLC). High-priority errors selected for mitigation are processed as in
+        # standard PEC. For low-priority errors not selected, the associated minus signs are
+        # ignored. This means the injected Paulis act as noise instead of antinoise, effectively
+        # doubling the error rates of the unmitigated errors. This discrete version of the
+        # prioritization seems to be the knapsack problem. We can just do a greedy prioritization
+        # based on "value density":
+        bias_bounds_flat = comm_bounds_flat_np * (1 - exp_rates_flat**2) / 2
+        priority_flat = np.zeros_like(bias_bounds_flat)
+        # When rates_flat_np is exactly 0, we know that the numerator is also exactly zero. So in
+        # the line below, we only update those values where they are non-zero.
+        nonzero = rates_flat_np != 0
+        priority_flat[nonzero] = bias_bounds_flat[nonzero] / rates_flat_np[nonzero]
+    else:
+        bias_bounds_flat = comm_bounds_flat_np * (1 - exp_rates_flat) / 2
+        priority_flat = comm_bounds_flat_np * exp_rates_flat
 
     # Find sorting according to priority (in decreasing order, hence [::-1])
     by_decr_priority = np.argsort(priority_flat)[::-1]
