@@ -1,0 +1,11 @@
+---
+fixes:
+  - |
+    Fixed :func:`~qiskit_addon_slc.bounds.compute_forward_bounds` and
+    :func:`~qiskit_addon_slc.bounds.compute_backward_bounds` hanging indefinitely on platforms that
+    start worker processes by forking, such as Linux. This happened whenever the calling process
+    had already run one of Qiskit's multithreaded routines, for example
+    :meth:`~qiskit.quantum_info.SparsePauliOp.to_matrix`: the worker processes inherited Qiskit's
+    thread pool without its threads and waited forever on their first use of it. The workers now
+    run Qiskit's routines serially, as :func:`qiskit.utils.parallel_map` already does for its own
+    workers.
