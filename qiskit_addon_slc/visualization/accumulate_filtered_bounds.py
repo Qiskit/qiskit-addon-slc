@@ -36,6 +36,18 @@ def accumulate_filtered_bounds(
 ) -> dict[str, dict[tuple[int, ...], float]]:
     """Accumulates the bound values filtered by a specified Pauli type.
 
+    Bound values are summed per non-identity support, so without a filter the bounds of *all* noise
+    terms sharing a support are accumulated into a single value.
+
+    A ``str`` or :class:`~qiskit.quantum_info.Pauli` filter is matched against each noise term
+    **reduced to its own non-identity support**, not against its full-width label. Thus ``"X"``
+    selects every single-qubit :math:`X` term regardless of which qubit it acts on, ``"XX"`` selects
+    the weight-2 :math:`XX` terms, and a full-width label such as ``"IXI"`` matches nothing.
+
+    .. seealso::
+       :func:`.draw_shaded_lightcone` for a runnable example of the full pipeline, as well as
+       :func:`.overlay_bounds_onto_circuit` and :func:`.render_bounds`.
+
     Args:
         circuit: the circuit whose bounds to accumulate.
         bounds: the bounds whose values to accumulate.
@@ -43,8 +55,8 @@ def accumulate_filtered_bounds(
         pauli_filter: the optional Pauli type to filter by. It behaves as follows:
             - ``None``: accumulates all noise term bounds of equal support.
             - ``int``: only accumulates noise term bounds of the specified Pauli weight.
-            - ``str``: selects this specific Pauli noise term.
-            - ``Pauli``: selects this specific Pauli noise term.
+            - ``str``: selects noise terms whose non-identity support equals this Pauli.
+            - ``Pauli``: selects noise terms whose non-identity support equals this Pauli.
 
     Returns:
         A nested dictionary. The outer most key is the :attr:`.InjectNoise.modifier_ref` (same as

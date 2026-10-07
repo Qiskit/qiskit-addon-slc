@@ -36,3 +36,9 @@ jobs:
       - name: Test using tox environment
         run: |
           tox -e py --parallel --parallel-no-spinner
+      - name: Run doctests
+        run: |
+          tox -e py-doctest
+      - name: Run notebook tests
+        run: |
+          tox -e py-notebook

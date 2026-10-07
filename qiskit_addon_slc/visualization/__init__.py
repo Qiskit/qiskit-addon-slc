@@ -57,6 +57,120 @@ def draw_shaded_lightcone(
     Then, the resulting bounds are overlaid onto the provided ``circuit`` (see
     :func:`.overlay_bounds_onto_circuit`) and subsequently rendered (see :func:`.render_bounds`).
 
+    This is the single-call entry point for the three-step pipeline; use it unless you need the
+    intermediate results.
+
+    The noise models below come from :func:`~qiskit_addon_slc.utils.generate_noise_model_paulis`,
+    which produces the 1- and 2-weight Pauli terms that are actually learned for each box. The bound
+    values are made up, with :math:`Z` errors taken three times as likely as :math:`X` ones so that
+    the effect of filtering is visible.
+
+    .. plot::
+       :include-source:
+       :context: reset
+       :alt: A two-box quantum circuit on three qubits whose boxes are shaded by their accumulated
+             error bound, with a vertical colorbar to the right of the circuit.
+
+       >>> import numpy as np
+       >>> from qiskit import QuantumCircuit
+       >>> from qiskit.circuit import BoxOp
+       >>> from qiskit.quantum_info import PauliLindbladMap
+       >>> from samplomatic import InjectNoise
+       >>> from samplomatic.utils import find_unique_box_instructions
+       >>> from qiskit_addon_slc.utils import generate_noise_model_paulis
+       >>> from qiskit_addon_slc.visualization import draw_shaded_lightcone
+
+       >>> circuit = QuantumCircuit(3)
+       >>> for idx, (qubit_0, qubit_1) in enumerate([(0, 1), (1, 2)]):
+       ...     body = QuantumCircuit(3)
+       ...     _ = body.cx(qubit_0, qubit_1)
+       ...     annotation = InjectNoise(ref=f"noise_{idx}", modifier_ref=f"box_{idx}")
+       ...     _ = circuit.append(BoxOp(body, annotations=[annotation]), [0, 1, 2])
+
+       >>> noise_model_paulis = generate_noise_model_paulis(
+       ...     find_unique_box_instructions(circuit)
+       ... )
+       >>> rates = {"X": 0.01, "Y": 0.02, "Z": 0.03}
+       >>> bounds = {
+       ...     f"box_{idx}": PauliLindbladMap.from_components(
+       ...         np.array(
+       ...             [
+       ...                 sum(rates[pauli] for pauli in label)
+       ...                 for label, _ in noise_model_paulis[f"noise_{idx}"].to_sparse_list()
+       ...             ]
+       ...         )
+       ...         * (idx + 1),
+       ...         noise_model_paulis[f"noise_{idx}"],
+       ...     )
+       ...     for idx in range(2)
+       ... }
+
+       >>> figure = draw_shaded_lightcone(circuit, bounds, noise_model_paulis)
+
+    The ``pauli_filter`` is forwarded to :func:`.accumulate_filtered_bounds` and also recorded in the
+    figure title. An ``int`` selects a Pauli weight, still mixing the Pauli types:
+
+    .. plot::
+       :include-source:
+       :context: close-figs
+       :alt: The same shaded circuit restricted to weight-1 error terms, titled "1-qubit errors".
+
+       >>> figure = draw_shaded_lightcone(
+       ...     circuit, bounds, noise_model_paulis, pauli_filter=1
+       ... )
+
+    A ``str`` or :class:`~qiskit.quantum_info.Pauli` matches each noise term reduced to its own
+    non-identity support. Since the drawings above accumulate every Pauli type sharing a support,
+    this is how to visualize one type on its own — and the two differ here by the factor of three
+    between the :math:`X` and :math:`Z` rates:
+
+    .. plot::
+       :include-source:
+       :nofigs:
+       :context:
+
+       >>> from qiskit_addon_slc.visualization import accumulate_filtered_bounds
+       >>> for pauli_filter in (None, "X", "Z"):
+       ...     filtered = accumulate_filtered_bounds(
+       ...         circuit, bounds, noise_model_paulis, pauli_filter=pauli_filter
+       ...     )
+       ...     single_qubit = {
+       ...         support[0]: round(float(bound), 3)
+       ...         for support, bound in sorted(filtered["box_0"].items())
+       ...         if len(support) == 1
+       ...     }
+       ...     print(f"{str(pauli_filter):>4}: {single_qubit}")
+       None: {0: 0.06, 1: 0.06, 2: 0.06}
+          X: {0: 0.01, 1: 0.01, 2: 0.01}
+          Z: {0: 0.03, 1: 0.03, 2: 0.03}
+
+    .. plot::
+       :include-source:
+       :context: close-figs
+       :alt: The same shaded circuit restricted to single-qubit Z error terms, showing lighter
+             shading than the unfiltered drawing and titled with the Z Pauli label.
+
+       >>> figure = draw_shaded_lightcone(
+       ...     circuit, bounds, noise_model_paulis, pauli_filter="Z"
+       ... )
+
+    Because the match uses the reduced support, a weight-2 term is selected by ``"XX"`` rather than
+    by a full-width label such as ``"XXI"``:
+
+    .. plot::
+       :include-source:
+       :context: close-figs
+       :alt: The same circuit restricted to the weight-2 XX error terms, shading only the qubit
+             pairs they act on and titled with subscripted Pauli labels.
+
+       >>> figure = draw_shaded_lightcone(
+       ...     circuit, bounds, noise_model_paulis, pauli_filter="XX"
+       ... )
+
+    .. seealso::
+       :func:`.accumulate_filtered_bounds`, :func:`.overlay_bounds_onto_circuit`,
+       :func:`.render_bounds`
+
     Args:
         circuit: the circuit whose shaded lightcone to draw.
         bounds: the bounds to use for the shaded lightcone.

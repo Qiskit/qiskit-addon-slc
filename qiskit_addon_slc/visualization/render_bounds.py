@@ -36,6 +36,17 @@ def render_bounds(
 ) -> mpl.figure.Figure:
     """Renders a quantum circuit with overlaid bounds and according styling.
 
+    Each overlaid box is colored by its bound value on a ``viridis`` scale running from :math:`0` to
+    the ``"max_bound"`` metadata entry of ``bounds_circuit`` (see
+    :func:`overlay_bounds_onto_circuit`), with a colorbar added to the right of the circuit.
+
+    Supplying the same ``pauli_filter`` that was used for :func:`accumulate_filtered_bounds` records
+    it in the figure title, which is worth doing whenever a filtered set of bounds is rendered.
+
+    .. seealso::
+       :func:`.draw_shaded_lightcone` for a runnable example of the full pipeline, as well as
+       :func:`.accumulate_filtered_bounds` and :func:`.overlay_bounds_onto_circuit`.
+
     Args:
         bounds_circuit: the quantum circuit with overlaid bounds. See also
             :func:`overlay_bounds_onto_circuit`.
