@@ -27,6 +27,7 @@ requires-python = ">=3.10"
 
 dependencies = [
     "matplotlib>=3.10.5, <4",
+    "plotly>=6.5.0, <8",
     "pyscf>=2.10, <3",
     "qiskit[visualization]>=2.2, <3",
     "pauli-prop>=0.1.0, <1",
@@ -46,7 +47,7 @@ basetest = [
 ]
 test = [
     "qiskit-addon-slc[basetest]",
-    "qiskit-ibm-runtime>=0.46",
+    "qiskit-ibm-runtime>=0.47",
 ]
 doctest = [
     "qiskit-addon-slc[basetest,notebook-dependencies]",
@@ -71,7 +72,7 @@ lint = [
 notebook-dependencies = [
     "qiskit-addon-slc",
     "qiskit-addon-utils>=0.3.0",
-    "qiskit-ibm-runtime>=0.46",
+    "qiskit-ibm-runtime>=0.47",
 ]
 docs = [
     "qiskit-addon-slc[doctest]",

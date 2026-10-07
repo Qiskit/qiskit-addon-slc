@@ -1,0 +1,15 @@
+---
+features:
+  - |
+    Added :func:`~qiskit_addon_slc.visualization.animate_shaded_lightcone`, which animates a shaded
+    light cone on top of a QPU's coupling map. This makes shaded light cones easier to interpret for
+    circuits acting on qubits whose connectivity is higher than a 1D line, where
+    :func:`~qiskit_addon_slc.visualization.draw_shaded_lightcone` becomes hard to read.
+
+    The qubits are placed by embedding the coupling map into a square lattice, so that every coupling
+    is drawn between grid-adjacent qubits. The strategy is chosen from the map's maximum
+    connectivity, which supports both the heavy-hex processors and those with square connectivity.
+upgrade:
+  - |
+    ``plotly`` is a new requirement of ``qiskit-addon-slc``, used by
+    :func:`~qiskit_addon_slc.visualization.animate_shaded_lightcone`.
