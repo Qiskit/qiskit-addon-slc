@@ -139,7 +139,7 @@ def merge_bounds(
         to_partition_bwd = {box_id: bound.rates.copy() for box_id, bound in backward_bounds.items()}
 
     LOGGER.warning(
-        "Optimal spacetime partitioning not implemented!Just partitioning list of noisy boxes."
+        "Optimal spacetime partitioning not implemented! Just partitioning list of noisy boxes."
     )
     total_bias_vs_partition = [sum(bias_fwd.sum() for bias_fwd in to_partition_fwd.values())]
     # NOTE: we exploit the fact that `id_map` will contain the `InjectNoise.modifier_ref` as keys in

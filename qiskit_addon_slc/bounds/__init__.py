@@ -38,6 +38,16 @@ directly, but may prove useful for additional development on top of this package
 
 .. autofunction:: compute_bounds
 
+.. autofunction:: time_evolved_norm_forward
+
+.. autofunction:: time_evolved_norm_backward
+
+.. autoclass:: LightCone
+   :members:
+   :no-inherited-members:
+   :no-special-members:
+   :show-inheritance:
+
 .. autoclass:: CommutatorBounds
    :members:
    :no-inherited-members:
@@ -45,19 +55,23 @@ directly, but may prove useful for additional development on top of this package
    :show-inheritance:
 """
 
-from .backward import compute_backward_bounds
+from .backward import compute_backward_bounds, time_evolved_norm_backward
 from .commutator_bounds import CommutatorBounds, compute_bounds
-from .forward import compute_forward_bounds
+from .forward import compute_forward_bounds, time_evolved_norm_forward
+from .light_cone import LightCone
 from .local_scales import compute_local_scales
 from .merge import merge_bounds
 from .speed_limit import tighten_with_speed_limit
 
 __all__ = [
     "CommutatorBounds",
+    "LightCone",
     "compute_backward_bounds",
     "compute_bounds",
     "compute_forward_bounds",
     "compute_local_scales",
     "merge_bounds",
     "tighten_with_speed_limit",
+    "time_evolved_norm_backward",
+    "time_evolved_norm_forward",
 ]

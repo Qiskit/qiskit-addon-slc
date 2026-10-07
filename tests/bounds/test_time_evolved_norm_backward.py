@@ -19,7 +19,7 @@ import pytest
 from pauli_prop.propagation import RotationGates
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import Pauli
-from qiskit_addon_slc.bounds.backward import _time_evolved_norm_backward
+from qiskit_addon_slc.bounds.backward import time_evolved_norm_backward
 
 # A circuit with no non-Clifford content: the error term is not evolved at all.
 NO_GATES = RotationGates([], [], [])
@@ -60,7 +60,7 @@ def test_the_default_term_limit_is_usable():
     for qubit in range(2):
         circuit.rzz(0.2, qubit, qubit + 1)
 
-    bounds = _time_evolved_norm_backward(Pauli("XII"), _rotation_gates(circuit))
+    bounds = time_evolved_norm_backward(Pauli("XII"), _rotation_gates(circuit))
 
     assert 0.0 <= bounds.commutator_bound <= 2.0 + 1e-8
 
@@ -90,7 +90,7 @@ def test_unevolved_bound_depends_on_the_x_component(pauli, expected):
         pauli: the error Pauli term.
         expected: the bound it should produce.
     """
-    bounds = _time_evolved_norm_backward(Pauli(pauli), NO_GATES, evolution_max_terms=MAX_TERMS)
+    bounds = time_evolved_norm_backward(Pauli(pauli), NO_GATES, evolution_max_terms=MAX_TERMS)
 
     assert bounds.commutator_bound == pytest.approx(expected)
     assert bounds.truncation_bias == 0.0
@@ -111,7 +111,7 @@ def test_bound_never_exceeds_the_theoretical_maximum(num_qubits):
     for qubit in range(num_qubits - 1):
         circuit.rzz(0.2, qubit, qubit + 1)
 
-    bounds = _time_evolved_norm_backward(
+    bounds = time_evolved_norm_backward(
         Pauli("X" + "I" * (num_qubits - 1)),
         _rotation_gates(circuit),
         evolution_max_terms=MAX_TERMS,
@@ -130,12 +130,12 @@ def test_a_tight_term_limit_reports_truncation_bias():
     for qubit in range(num_qubits - 1):
         circuit.rzz(0.5, qubit, qubit + 1)
 
-    generous = _time_evolved_norm_backward(
+    generous = time_evolved_norm_backward(
         Pauli("X" + "I" * (num_qubits - 1)),
         _rotation_gates(circuit),
         evolution_max_terms=MAX_TERMS,
     )
-    truncated = _time_evolved_norm_backward(
+    truncated = time_evolved_norm_backward(
         Pauli("X" + "I" * (num_qubits - 1)),
         _rotation_gates(circuit),
         evolution_max_terms=2,
@@ -160,7 +160,7 @@ def test_an_overwhelming_truncation_bias_abandons_the_bound():
     for qubit in range(num_qubits - 1):
         circuit.rzz(np.pi / 3, qubit, qubit + 1)
 
-    bounds = _time_evolved_norm_backward(
+    bounds = time_evolved_norm_backward(
         Pauli("X" + "I" * (num_qubits - 1)),
         _rotation_gates(circuit),
         evolution_max_terms=1,

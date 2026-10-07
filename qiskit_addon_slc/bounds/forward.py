@@ -50,6 +50,11 @@ from .light_cone import LightCone
 LOGGER = logging.getLogger(__name__)
 WARNING_TOL: float = 1e-8
 
+# The default width, in qubits, beyond which a commutator's spectral norm is no longer computed and
+# the triangle inequality is used instead. Shared by :func:`time_evolved_norm_forward` and
+# :func:`compute_forward_bounds` so that bounding a single term agrees with bounding a whole circuit.
+_DEFAULT_EIGVAL_MAX_QUBITS: int = 14
+
 
 def time_evolved_norm_forward(
     pauli: Pauli,
@@ -57,7 +62,7 @@ def time_evolved_norm_forward(
     observable: Pauli,
     *,
     evolution_max_terms: int = _DEFAULT_EVOLUTION_MAX_TERMS,
-    eigval_max_qubits: int = np.iinfo(np.uint).max,
+    eigval_max_qubits: int = _DEFAULT_EIGVAL_MAX_QUBITS,
     comm_norm_order: int = 2,
     atol_simplify: float = 1e-8,
     atol_eigenvalue: float = 1e-10,
@@ -220,7 +225,7 @@ def compute_forward_bounds(
     observable: Pauli | PauliList | SparseObservable | SparsePauliOp,
     *,
     evolution_max_terms: int = _DEFAULT_EVOLUTION_MAX_TERMS,
-    eigval_max_qubits: int = 14,
+    eigval_max_qubits: int = _DEFAULT_EIGVAL_MAX_QUBITS,
     atol: float = 1e-8,
     atol_simplify: float = 1e-8,
     atol_eigenvalue: float = 1e-10,
