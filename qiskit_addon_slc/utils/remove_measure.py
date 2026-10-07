@@ -33,6 +33,34 @@ def remove_measure(circuit: QuantumCircuit) -> QuantumCircuit:
     .. note::
        This function recurses into :class:`~qiskit.circuit.BoxOp` instructions.
 
+    .. plot::
+       :include-source:
+       :nofigs:
+       :context: reset
+
+       >>> from qiskit import QuantumCircuit
+       >>> from qiskit_addon_slc.utils import remove_measure
+
+       >>> circuit = QuantumCircuit(2, 2)
+       >>> _ = circuit.h(0)
+       >>> _ = circuit.measure(0, 0)
+       >>> _ = circuit.cx(0, 1)
+       >>> dict(sorted(circuit.count_ops().items()))
+       {'cx': 1, 'h': 1, 'measure': 1}
+
+       >>> dict(sorted(remove_measure(circuit).count_ops().items()))
+       {'cx': 1, 'h': 1}
+
+    The original circuit is left untouched:
+
+    .. plot::
+       :include-source:
+       :nofigs:
+       :context:
+
+       >>> dict(sorted(circuit.count_ops().items()))
+       {'cx': 1, 'h': 1, 'measure': 1}
+
     Args:
         circuit: the circuit whose measurements to remove.
 

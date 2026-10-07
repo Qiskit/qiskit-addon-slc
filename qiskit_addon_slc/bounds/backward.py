@@ -35,7 +35,12 @@ from qiskit.quantum_info import (
 
 from .. import globals as slc_globals
 from ..utils import remove_measure
-from .commutator_bounds import Bounds, CommutatorBounds, compute_bounds
+from .commutator_bounds import (
+    _DEFAULT_EVOLUTION_MAX_TERMS,
+    Bounds,
+    CommutatorBounds,
+    compute_bounds,
+)
 from .light_cone import LightCone
 
 LOGGER = logging.getLogger(__name__)
@@ -45,7 +50,7 @@ def _time_evolved_norm_backward(
     pauli: Pauli,
     gates: RotationGates,
     *,
-    evolution_max_terms: int = np.iinfo(np.uint).max,
+    evolution_max_terms: int = _DEFAULT_EVOLUTION_MAX_TERMS,
 ) -> CommutatorBounds:
     r"""Bound the effect of an error Pauli term on the quantum state by evolving the error backward.
 
@@ -106,7 +111,7 @@ def compute_backward_bounds(
     noise_model_paulis: dict[str, QubitSparsePauliList],
     /,
     *,
-    evolution_max_terms: int = 1_000_000,
+    evolution_max_terms: int = _DEFAULT_EVOLUTION_MAX_TERMS,
     **kwargs,
 ) -> Bounds:
     r"""Compute the backward-evolved unequal-time commutator bounds.

@@ -52,6 +52,26 @@ def get_extremal_eigenvalue(spo: SparsePauliOp, **kwargs) -> tuple[bool, float]:
     with an iterative eigensolver (Davidson). This path is accurate but not exact, and the ``kwargs``
     below affect only it.
 
+    Note the sign convention: the returned eigenvalue is the most-negative one, so the spectral norm
+    is its absolute value.
+
+    .. plot::
+       :include-source:
+       :nofigs:
+       :context: reset
+
+       >>> from qiskit.quantum_info import SparsePauliOp
+       >>> from qiskit_addon_slc.utils import get_extremal_eigenvalue
+
+       >>> operator = SparsePauliOp(["ZI", "IZ"], [1.0, 0.5])
+       >>> converged, eigenvalue = get_extremal_eigenvalue(operator)
+       >>> converged
+       True
+       >>> float(eigenvalue)
+       -1.5
+       >>> abs(eigenvalue)  # the spectral norm
+       1.5
+
     Args:
         spo: the Hermitian operator whose most-negative eigenvalue (and hence spectral norm) to
             compute.

@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import logging
 import multiprocessing as mp
+import os
 import time
 from collections.abc import Callable
 from functools import partial
@@ -47,6 +48,28 @@ from .light_cone import LightCone
 Bounds = dict[str, PauliLindbladMap]
 
 LOGGER = logging.getLogger(__name__)
+
+# The default cap on the number of operator terms tracked during a Pauli evolution.
+#
+# This must stay a realistic number rather than something nominally "unlimited" such as
+# ``np.iinfo(np.uint).max``: :func:`~pauli_prop.propagation.propagate_through_rotation_gates` treats
+# the cap as a *capacity* and pre-allocates it, so a value of that size asks the allocator for
+# terabytes and aborts the process rather than raising.
+_DEFAULT_EVOLUTION_MAX_TERMS: int = 1_000_000
+
+
+def _forbid_qiskit_parallelism() -> None:
+    """Makes Qiskit's Rust code run serially in a worker process.
+
+    Qiskit runs some of its Rust routines, such as :meth:`.SparsePauliOp.to_matrix`, on a global
+    ``rayon`` thread pool, which is started the first time one of them is called. A worker forked
+    from a process that has already started that pool inherits the pool's state but none of its
+    threads, so the first such call in the worker waits forever for threads that do not exist.
+
+    This is the same guard :func:`qiskit.utils.parallel_map` installs in its own workers: it tells
+    Qiskit that it is already running in parallel, so the Rust code does not reach for the pool.
+    """
+    os.environ["QISKIT_IN_PARALLEL"] = "TRUE"
 
 
 class CommutatorBounds(NamedTuple):
@@ -173,7 +196,7 @@ def compute_bounds(
 
         gathered_bounds[box_id][0][rate_idx] = bound.min()
 
-    pool = mp.Pool(num_processes)
+    pool = mp.Pool(num_processes, initializer=_forbid_qiskit_parallelism)
     tasks = set()
 
     start = time.time()
