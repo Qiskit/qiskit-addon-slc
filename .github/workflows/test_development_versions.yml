@@ -1,57 +1,76 @@
+---
 name: Development version tests
 
+# This is a reusable workflow, driven by `branch-protection.yml` (for pull requests and the merge
+# queue) and by `on-nightly.yml` (for the scheduled run).  It deliberately has no triggers of its own
+# beyond `workflow_call`, and no `concurrency` block: the calling workflow owns both.
+#
+# This builds several upstream packages from their default branches, so it can be broken by upstream
+# changes with no local cause.  It is still part of branch protection; admins can bypass the ruleset
+# on the rare days when upstream is broken.
+
 on:
-  push:
-    branches:
-      - main
-      - 'stable/**'
-  pull_request:
-    branches:
-      - main
-      - 'stable/**'
-  schedule:
-    - cron: '0 1 * * *'
+  workflow_call:
+    inputs:
+      runner:
+        description: Runner image to use.
+        type: string
+        required: true
+      python-version:
+        description: Python version to test.
+        type: string
+        required: true
 
 jobs:
   tests:
-    name: development version tests (${{ matrix.os }}, ${{ matrix.python-version }})
-    runs-on: ${{ matrix.os }}
+    # The caller's job name carries the matrix values, which GitHub appends to it, so this only needs
+    # to say which suite is running.
+    name: development
+    runs-on: ${{ inputs.runner }}
     timeout-minutes: 30
-    strategy:
-      max-parallel: 4
-      matrix:
-        os: [ubuntu-latest]
-        python-version: ["3.10", "3.14"]
     steps:
       - uses: actions/checkout@v7
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v7
+
+      - uses: actions/setup-python@v7
+        name: Install Python
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ inputs.python-version }}
+          # There is no lockfile (dependencies come from `pyproject.toml`'s extras), so the pip wheel
+          # cache is keyed on that file.  Coarser than a lockfile: any edit to it, dependency-related or
+          # not, invalidates the cache.  The key is computed here, before the steps below rewrite the
+          # file in place, so it matches the one the other suites use.
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
       - name: Upgrade pip
         run: |
           python -m pip install --upgrade pip
+
       - name: Install tools from pypi
         run: |
           python -m pip install tox build extremal-python-dependencies==0.1.0
+
       - name: Build Qiskit SDK development wheel
         run: |
           git clone https://github.com/Qiskit/qiskit
           cd qiskit
           git rev-parse HEAD
           python -m build --wheel
+
       - name: Build qiskit-ibm-runtime development wheel
         run: |
           git clone https://github.com/Qiskit/qiskit-ibm-runtime
           cd qiskit-ibm-runtime
           git rev-parse HEAD
           python -m build --wheel
+
       - name: Build samplomatic development wheel
         run: |
           git clone https://github.com/Qiskit/samplomatic
           cd samplomatic
           git rev-parse HEAD
           python -m build --wheel
+
       - name: Build qiskit-addon-utils development wheel
         run: |
           git clone https://github.com/Qiskit/qiskit-addon-utils
@@ -60,6 +79,7 @@ jobs:
           # Unpin qiskit<2
           extremal-python-dependencies pin-dependencies --inplace qiskit
           python -m build --wheel
+
       - name: Pin development versions
         shell: bash
         run: >-
@@ -68,12 +88,15 @@ jobs:
           "qiskit-ibm-runtime @ file:$(echo qiskit-ibm-runtime/dist/*.whl)"
           "samplomatic @ file:$(echo samplomatic/dist/*.whl)"
           "qiskit-addon-utils @ file:$(echo qiskit-addon-utils/dist/*.whl)"
+
       - name: Test using tox environment
         run: |
           tox -e py --parallel --parallel-no-spinner
+
       - name: Run doctests
         run: |
           tox -e py-doctest
+
       - name: Run notebook tests
         run: |
           tox -e py-notebook

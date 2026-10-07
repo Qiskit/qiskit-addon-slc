@@ -1,31 +1,45 @@
+---
 name: Minimum version tests
 
+# This is a reusable workflow, driven by `branch-protection.yml` (for pull requests and the merge
+# queue) and by `on-nightly.yml` (for the scheduled run).  It deliberately has no triggers of its own
+# beyond `workflow_call`, and no `concurrency` block: the calling workflow owns both.
+
 on:
-  push:
-    branches:
-      - main
-      - 'stable/**'
-  pull_request:
-    branches:
-      - main
-      - 'stable/**'
+  workflow_call:
+    inputs:
+      runner:
+        description: Runner image to use.
+        type: string
+        required: true
+      python-version:
+        description: >
+          Python version to test.  Typically the oldest supported one, as the minimum supported
+          versions of the dependencies may not be compatible with the most recent Python release.
+        type: string
+        required: true
 
 jobs:
   tests:
-    name: minimum version tests (${{ matrix.os }}, ${{ matrix.python-version }})
-    runs-on: ${{ matrix.os }}
+    # The caller's job name carries the matrix values, which GitHub appends to it, so this only needs
+    # to say which suite is running.
+    name: minimum
+    runs-on: ${{ inputs.runner }}
     timeout-minutes: 30
-    strategy:
-      max-parallel: 4
-      matrix:
-        os: [ubuntu-latest]
-        python-version: ["3.10"]
     steps:
       - uses: actions/checkout@v7
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v7
+
+      - uses: actions/setup-python@v7
+        name: Install Python
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ inputs.python-version }}
+          # There is no lockfile (dependencies come from `pyproject.toml`'s extras), so the pip wheel
+          # cache is keyed on that file.  Coarser than a lockfile: any edit to it, dependency-related or
+          # not, invalidates the cache.  The key is computed here, before the step below rewrites the
+          # file in place, so it matches the one the other suites use.
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
       - name: Install dependencies (minimum versions)
         shell: bash
         run: |
@@ -33,12 +47,15 @@ jobs:
           python -m pip install extremal-python-dependencies==0.1.0
           pip install "tox==$(extremal-python-dependencies get-tox-minversion)"
           extremal-python-dependencies pin-dependencies-to-minimum --inplace
+
       - name: Test using tox environment
         run: |
           tox -e py --parallel --parallel-no-spinner
+
       - name: Run doctests
         run: |
           tox -e py-doctest
+
       - name: Run notebook tests
         run: |
           tox -e py-notebook
