@@ -15,7 +15,7 @@
 
 # Shaded lightcones (SLC)
 
-![Lightcones](docs/images/lightcones.png)
+![Lightcones](https://raw.githubusercontent.com/Qiskit/qiskit-addon-slc/refs/heads/main/docs/images/lightcones.png)
 
 `qiskit-addon-slc` is a package for computing the shaded lightcone (SLC) [[1]](#references) of an
 observable with respect to a quantum circuit. In the context of probabilistic error cancellation (PEC), shaded lightcones
@@ -68,19 +68,19 @@ Shaded lightcones are calculated and used in 5 steps:
 1. Compute a bound on the effect of each Pauli error term on the observable at the end of the circuit (forward bound)
 2. Compute a bound on the effect of each Pauli error term on the initial state at the beginning of the circuit (backward bound)
 
-![Bounds](docs/images/bounds.png)
+![Bounds](https://raw.githubusercontent.com/Qiskit/qiskit-addon-slc/refs/heads/main/docs/images/bounds.png)
 
 3. Approximate a bias contribution for each Pauli error term using the forward/backward bounds and the term's error rate
 
-![Merge bounds](docs/images/merge_bounds.png)
+![Merge bounds](https://raw.githubusercontent.com/Qiskit/qiskit-addon-slc/refs/heads/main/docs/images/merge_bounds.png)
 
 4. Prioritize error terms based on their error rate and bounds. Truncate terms from the noise model which have the least effect on the observable expectation value until the user-specified bias tolerance is hit. Alternatively, one can add the most impactful error terms to a noise model until the user-specified sampling cost budget is filled. 
 
-![Prioritize and truncate](docs/images/prioritize_and_truncate.png)
+![Prioritize and truncate](https://raw.githubusercontent.com/Qiskit/qiskit-addon-slc/refs/heads/main/docs/images/prioritize_and_truncate.png)
 
 5. Mitigate the truncated noise model. Using the [directed execution model](https://quantum.cloud.ibm.com/docs/guides/directed-execution-model) from Qiskit Runtime, specifying error terms to ignore during PEC sampling is straightforward. See the [tutorial](https://quantum.cloud.ibm.com/docs/tutorials/pec-with-shaded-lightcones) for details.
 
-![Reduced PEC](docs/images/reduced_pec.png)
+![Reduced PEC](https://raw.githubusercontent.com/Qiskit/qiskit-addon-slc/refs/heads/main/docs/images/reduced_pec.png)
 
 #### Software features
 
