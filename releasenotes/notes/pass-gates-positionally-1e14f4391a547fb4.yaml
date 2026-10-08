@@ -1,0 +1,8 @@
+---
+fixes:
+  - |
+    Fixed :func:`~qiskit_addon_slc.bounds.compute_bounds` silently returning the trivial bound of
+    ``2.0`` for every error term when its ``norm_fn`` names its second parameter anything other than
+    ``gates``. The gates were passed as the keyword argument ``gates``, although the documented
+    signature of ``norm_fn`` only specifies the types of its two arguments. ``norm_fn`` now gets
+    called as ``norm_fn(pauli, gates)``, so the names of its parameters no longer matter.
