@@ -44,7 +44,24 @@ class LightCone(NamedTuple):
     # light cone one at a time. However, transpiler passes are (by design) stateless and, thus,
     # cannot support such an iterative processing. Furthermore, we want to avoid back-and-forth
     # conversions of our QuantumCircuit and a DAGCircuit.
-    """A simple light cone data structure."""
+    """A stateful light cone, grown one circuit instruction at a time.
+
+    :func:`.compute_bounds` uses a light cone to skip work: while iterating a circuit, any
+    instruction that :meth:`commutes` with the light cone cannot affect what is being bounded, and
+    any instruction that does not commute is added to it, widening the cone.
+
+    The light cone is *seeded* with the operator that the error terms are bounded against. The two
+    classmethods cover the cases of the built-in bounds: :meth:`initialize_from_pauli` seeds it with
+    a Pauli observable, as :func:`.compute_forward_bounds` does, and
+    :meth:`initialize_from_measurements` seeds it with a set of qubits, such as every active qubit of
+    the circuit, as :func:`.compute_backward_bounds` does. To bound against anything else, construct
+    it directly from the qubits it spans and the operations it starts out with, and an empty
+    :attr:`offset_cache`.
+
+    .. caution::
+       A light cone is mutated by :meth:`commutes`, so a fresh one is needed for every call to
+       :func:`.compute_bounds`.
+    """
 
     qubits: set[Qubit]
     """The qubits spanned by the light cone."""

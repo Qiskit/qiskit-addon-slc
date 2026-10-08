@@ -46,7 +46,7 @@ from .light_cone import LightCone
 LOGGER = logging.getLogger(__name__)
 
 
-def _time_evolved_norm_backward(
+def time_evolved_norm_backward(
     pauli: Pauli,
     gates: RotationGates,
     *,
@@ -62,6 +62,9 @@ def _time_evolved_norm_backward(
     target circuit) is evolved backwards to the *start* of the circuit. In doing so, it must
     be evolved through the non-Clifford component of the circuit within the light-cone (here, given
     by ``gates``).
+
+    The state is assumed to be the all-zero state, :math:`\ket{0 \ldots 0}`, which is what
+    :func:`.compute_backward_bounds` assumes for every active qubit of the circuit.
 
     Note, that this function is designed for the context of :func:`.compute_backward_bounds` which
     inverts the target circuit first. Hence, a backward evolution actually amounts to the
@@ -151,7 +154,7 @@ def compute_backward_bounds(
     circuit = remove_measure(circuit).inverse()
 
     norm_fn = partial(
-        _time_evolved_norm_backward,
+        time_evolved_norm_backward,
         evolution_max_terms=evolution_max_terms,
     )
 

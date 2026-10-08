@@ -1,0 +1,13 @@
+---
+features:
+  - |
+    The building blocks of :func:`~qiskit_addon_slc.bounds.compute_forward_bounds` and
+    :func:`~qiskit_addon_slc.bounds.compute_backward_bounds` are now part of the public API, so that
+    custom bounds can be assembled with :func:`~qiskit_addon_slc.bounds.compute_bounds`:
+
+    * :func:`~qiskit_addon_slc.bounds.time_evolved_norm_forward` bounds a single Pauli error term
+      evolved forward to an observable.
+    * :func:`~qiskit_addon_slc.bounds.time_evolved_norm_backward` bounds a single Pauli error term
+      evolved backward to the all-zero initial state.
+    * :class:`~qiskit_addon_slc.bounds.LightCone` tracks which instructions can affect what is being
+      bounded, and is seeded with the operator the error terms are bounded against.
