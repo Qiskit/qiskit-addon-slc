@@ -1,0 +1,9 @@
+---
+fixes:
+  - |
+    Fixed :func:`~qiskit_addon_slc.bounds.compute_bounds` silently ignoring exceptions raised while
+    bounding an error term. Such an error term keeps the trivial bound of ``2.0``, which remains a
+    valid bound, but any problem in the norm function, such as a bug in a custom one, went
+    unnoticed. The first failure now gets logged as a warning together with its traceback from
+    within the worker process, and a second warning summarizes all failures once the computation
+    has finished.
