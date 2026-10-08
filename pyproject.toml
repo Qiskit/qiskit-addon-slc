@@ -65,7 +65,7 @@ style = [
 ]
 lint = [
     "qiskit-addon-slc[style]",
-    "mypy==2.3.1",
+    "mypy==2.4.0",
     "pylint==4.1.2",
     "reno>=4.1",
     "toml>=0.9.6",
