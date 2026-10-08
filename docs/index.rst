@@ -66,7 +66,6 @@ Future work
 """""""""""
 
 - Rust-accelerated eigenvalue computation for computing forward bounds
-- Additional guides coming soon
 
 Contributing
 ------------
@@ -113,7 +112,7 @@ References
 ----------
 
 .. _ref1:
-   
+
 1. Andrew Eddins, et al., `Lightcone shading for classically accelerated quantum error mitigation <https://arxiv.org/abs/2409.04401v1>`_, arXiv:2409.04401v1 [quant-ph].
 
 .. _ref2:
@@ -125,7 +124,7 @@ References
 
    Documentation home <self>
    Installation instructions <install>
-   Guides <guides/index>
+   Guides <guides/overview>
    GitHub <https://github.com/Qiskit/qiskit-addon-slc>
 
 .. toctree::

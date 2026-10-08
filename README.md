@@ -97,7 +97,6 @@ Shaded lightcones are calculated and used in 5 steps:
 #### Future work
 
 - Rust-accelerated eigenvalue computation for computing forward bounds
-- Additional guides coming soon
 
 ----------------------------------------------------------------------------------------------------
 
