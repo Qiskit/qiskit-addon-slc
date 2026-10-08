@@ -138,7 +138,9 @@ def compute_bounds(
         circuit: the target circuit.
         noise_model_paulis: the Pauli error terms to consider for each noise model.
         light_cone: the initialized and stateful :class:`.LightCone` tracker.
-        norm_fn: the function implementing the specific unequal time commutator.
+        norm_fn: the function implementing the specific unequal time commutator. It gets called
+            as ``norm_fn(pauli, gates)`` for every Pauli error term, where ``gates`` are the
+            non-Clifford gates within the light-cone that the error term must be evolved through.
         backwards: whether to iterate over the ``circuit`` in reverse.
         max_num_boxes: the maximum number of boxes for which to compute bounds. Bounds for any
             additional boxes will be given the trivial upper bound value of :math:`2.0`.
@@ -242,17 +244,12 @@ def compute_bounds(
             circuit.num_qubits,
         )
 
-        norm_fn = partial(  # type: ignore[call-arg]
-            norm_fn,
-            gates=RotationGates(
-                rot_gates.gates[::-1], rot_gates.qargs[::-1], rot_gates.thetas[::-1]
-            ),
-        )
+        gates = RotationGates(rot_gates.gates[::-1], rot_gates.qargs[::-1], rot_gates.thetas[::-1])
 
         for pauli_idx, pauli in enumerate(local_noise_terms.to_pauli_list()):
             task = pool.apply_async(
                 norm_fn,
-                [pauli],
+                [pauli, gates],
                 callback=partial(_insert_rate, box_id=box_id, rate_idx=pauli_idx),
             )
             tasks.add(task)
