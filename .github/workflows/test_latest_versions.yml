@@ -1,48 +1,57 @@
-name: Tests
+---
+name: Latest version tests
+
+# This is a reusable workflow, driven by `branch-protection.yml` (for pull requests and the merge
+# queue) and by `on-nightly.yml` (for the scheduled run).  It deliberately has no triggers of its own
+# beyond `workflow_call`, and no `concurrency` block: the calling workflow owns both.
 
 on:
-  push:
-    branches:
-      - main
-      - 'stable/**'
-  pull_request:
-    branches:
-      - main
-      - 'stable/**'
-  schedule:
-    - cron: '0 1 * * *'
+  workflow_call:
+    inputs:
+      runner:
+        description: Runner image to use.
+        type: string
+        required: true
+      python-version:
+        description: Python version to test.
+        type: string
+        required: true
 
 jobs:
   tests:
-    name: latest version tests (${{ matrix.os }}, ${{ matrix.python-version }})
-    runs-on: ${{ matrix.os }}
+    # The caller's job name carries the matrix values, which GitHub appends to it, so this only needs
+    # to say which suite is running.
+    name: latest
+    runs-on: ${{ inputs.runner }}
     timeout-minutes: 30
-    strategy:
-      max-parallel: 4
-      matrix:
-        os: [ubuntu-latest]
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
-        include:
-          - os: macos-latest
-            python-version: "3.14"
     steps:
       - uses: actions/checkout@v7
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v7
+
+      - uses: actions/setup-python@v7
+        name: Install Python
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ inputs.python-version }}
+          # There is no lockfile (dependencies come from `pyproject.toml`'s extras), so the pip wheel
+          # cache is keyed on that file.  Coarser than a lockfile: any edit to it, dependency-related or
+          # not, invalidates the cache.
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install tox
+
       - name: Test using tox environment
         shell: bash
         run: |
           tox -e py --parallel --parallel-no-spinner
+
       - name: Run doctests
         shell: bash
         run: |
           tox -e py-doctest
+
       - name: Run notebook tests
         shell: bash
         run: |

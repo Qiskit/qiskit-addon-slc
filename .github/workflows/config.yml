@@ -1,0 +1,61 @@
+---
+
+# This is a no-op workflow whose only purpose is to centralise shared CI configuration values.  It's
+# also possible to specify these in the GitHub web interface, but that separates them from the rest
+# of the configuration logic and means that changes to the configuration do not appear in the git
+# history.
+#
+# Every value here is a literal declared directly as a `workflow_call` output, so callers can read
+# them as `needs.config.outputs.<name>` without this workflow needing any real jobs.
+#
+# Note that all values must be quoted: an unquoted `3.10` is the *number* 3.1, which would install
+# Python 3.1 rather than 3.10.
+
+name: Set CI configuration
+
+on:
+  workflow_call:
+    outputs:
+      python-old:
+        description: Oldest supported version of Python (see `requires-python` in `pyproject.toml`).
+        value: '3.10'
+
+      python-new:
+        description: Newest supported version of Python.
+        value: '3.14'
+
+      python-all:
+        description: >
+          Every supported version of Python, as a JSON list for use with `fromJSON` in a matrix.  Keep
+          in step with the classifiers in `pyproject.toml` and the `envlist` in `tox.ini`.
+        value: '["3.10", "3.11", "3.12", "3.13", "3.14"]'
+
+      python-coverage:
+        description: >
+          Python version used for the lint, coverage and documentation builds.  These don't need to
+          sweep a range of versions, they just need a single one that all of the tooling supports.
+          This must match the `basepython` of the corresponding environments in `tox.ini`, or tox
+          will fail to find an interpreter.
+        value: '3.10'
+
+      stable-branch:
+        description: >
+          The current release branch.  Its documentation is what GitHub Pages serves.  Keep in step
+          with the backport target in `.mergify.yml`.
+        value: 'stable/0.1'
+
+      runner-linux-x86_64:
+        description: Runner image for Linux x86_64 jobs.
+        value: 'ubuntu-latest'
+
+      runner-macos-arm64:
+        description: Runner image for macOS ARM64 jobs.
+        value: 'macos-latest'
+
+jobs:
+  # We have to have _some_ job defined or the workflow isn't valid.
+  noop:
+    name: Configure
+    runs-on: 'ubuntu-latest'
+    steps:
+      - run: ':'

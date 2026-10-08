@@ -1,0 +1,78 @@
+---
+name: Deploy documentation
+
+# Post-merge publication of the documentation to GitHub Pages.
+#
+# The build itself lives in `docs.yml`, which is the single source of truth and is also what
+# `branch-protection.yml` uses to check that the documentation still builds on a pull request.  This
+# workflow adds the publishing step on top of it.
+#
+# The Pages site serves a single build: that of the current release branch (`stable-branch` in
+# `config.yml`).  Every other ref -- `main`, older release branches, tags, or a manual dispatch -- builds
+# without publishing.
+#
+# Deploying is deliberately not part of branch protection.  It is a consequence of merging rather than
+# a precondition for it, and it can only ever run post-merge, so as a required status check it would
+# always be skipped on a pull request -- which GitHub counts as a success.
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+*"
+    branches:
+      - main
+      - 'stable/**'
+
+concurrency:
+  # Not keyed on the ref: every run that deploys contends for the same Pages site.
+  group: ${{ github.repository }}-pages
+  # Don't cancel: we may otherwise end up with weird half-uploaded docs.
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  config:
+    name: Configure
+    if: github.repository_owner == 'Qiskit'
+    uses: ./.github/workflows/config.yml
+
+  docs:
+    name: Docs
+    needs: config
+    uses: ./.github/workflows/docs.yml
+    with:
+      runner: ${{ needs.config.outputs.runner-linux-x86_64 }}
+      python-version: ${{ needs.config.outputs.python-coverage }}
+
+  deploy:
+    name: Deploy
+    needs:
+      - config
+      - docs
+    if: github.ref == format('refs/heads/{0}', needs.config.outputs.stable-branch)
+    runs-on: ${{ needs.config.outputs.runner-linux-x86_64 }}
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download built documentation
+        uses: actions/download-artifact@v8
+        with:
+          name: qiskit-addon-slc-htmldocs
+          path: downloaded
+
+      # The artifact extracts with the tree one level down (see `docs.yml`), whereas Pages has to be
+      # handed the tree itself.
+      - name: Upload docs artifact for GitHub Pages
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: downloaded/qiskit-addon-slc-htmldocs
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
