@@ -21,7 +21,9 @@ from __future__ import annotations
 import logging
 import multiprocessing as mp
 import os
+import threading
 import time
+from collections import Counter
 from collections.abc import Callable
 from functools import partial
 from typing import NamedTuple
@@ -198,6 +200,31 @@ def compute_bounds(
 
         gathered_bounds[box_id][0][rate_idx] = bound.min()
 
+    failures: list[BaseException] = []
+    # NOTE: the pool calls _record_failure from two threads: the one handling the results of the
+    # tasks, and the one sending the tasks to the workers (if sending a task fails)
+    failures_lock = threading.Lock()
+
+    def _record_failure(exc: BaseException, box_id: str, rate_idx: int) -> None:
+        """Records a task that raised an exception, leaving the trivial bound for its error term.
+
+        Every failure gets recorded, but only the first one gets logged on its own, together with its
+        traceback, since all others are likely to share the same cause. Once the computation has
+        finished, a single warning summarizes all recorded failures.
+        """
+        nonlocal failures
+
+        with failures_lock:
+            is_first = not failures
+            failures.append(exc)
+        if is_first:
+            # NOTE: the exception's cause holds the traceback from within the worker process
+            LOGGER.warning(
+                f"Computing the bound of error term {rate_idx} of box '{box_id}' failed. Its error "
+                "term keeps the trivial bound of 2.0, as does that of any other failing task.",
+                exc_info=exc,
+            )
+
     pool = mp.Pool(num_processes, initializer=_forbid_qiskit_parallelism)
     tasks = set()
 
@@ -251,6 +278,7 @@ def compute_bounds(
                 norm_fn,
                 [pauli, gates],
                 callback=partial(_insert_rate, box_id=box_id, rate_idx=pauli_idx),
+                error_callback=partial(_record_failure, box_id=box_id, rate_idx=pauli_idx),
             )
             tasks.add(task)
 
@@ -289,9 +317,17 @@ def compute_bounds(
 
     tasks = {t for t in tasks if not t.ready()}
     completed = total_num_tasks - len(tasks)
-    LOGGER.info(f"Successfully completed [{completed}/{total_num_tasks}] tasks!")
 
     pool.join()
+
+    LOGGER.info(f"Successfully completed [{completed - len(failures)}/{total_num_tasks}] tasks!")
+    if failures:
+        failure_types = Counter(type(exc).__name__ for exc in failures)
+        LOGGER.warning(
+            f"[{len(failures)}/{total_num_tasks}] tasks failed and their error terms kept the "
+            "trivial bound of 2.0: "
+            + ", ".join(f"{count} x {name}" for name, count in failure_types.most_common())
+        )
 
     comm_norms: Bounds = {
         box_id: PauliLindbladMap.from_components(bounds[0], bounds[1])
