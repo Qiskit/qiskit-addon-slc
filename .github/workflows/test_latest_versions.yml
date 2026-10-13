@@ -47,6 +47,11 @@ jobs:
         run: |
           tox -e py --parallel --parallel-no-spinner
 
+      - name: Run optional tests
+        shell: bash
+        run: |
+          tox -e py-optional
+
       - name: Run doctests
         shell: bash
         run: |
