@@ -37,8 +37,16 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+all = [
+    "qiskit-addon-slc[opentelemetry]",
+]
+opentelemetry = [
+    "opentelemetry-api>=1.34.0",
+    "opentelemetry-sdk>=1.34.0",
+    "opentelemetry-exporter-otlp-proto-http>=1.34.0",
+]
 dev = [
-    "qiskit-addon-slc[test,doctest,nbtest,lint,docs]",
+    "qiskit-addon-slc[test,doctest,nbtest,lint,docs,all]",
     "tox>=4.4.3",
 ]
 basetest = [
