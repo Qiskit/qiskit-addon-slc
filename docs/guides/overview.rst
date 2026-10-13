@@ -30,3 +30,4 @@ These guides provide a deeper explanation of specific concepts and components fr
    Tightening bounds with a speed limit <speed_limit_tightening.ipynb>
    Computing custom bounds <custom_bounds.ipynb>
    Interpreting the visualizations <interpreting_visualizations.ipynb>
+   Collecting OpenTelemetry traces <opentelemetry_tracing>

@@ -1,0 +1,9 @@
+---
+features:
+  - |
+    The bound computations can now emit `OpenTelemetry <https://opentelemetry.io/>`_ traces, which
+    record the main computation, every worker process and every individual error term that was
+    bounded. Install the new ``opentelemetry`` optional dependency group and set the
+    ``QISKIT_SLC_TRACING_ENABLED`` environment variable to turn tracing on. The new guide on
+    collecting OpenTelemetry traces explains how to configure the exporter and how to read the
+    resulting traces.
