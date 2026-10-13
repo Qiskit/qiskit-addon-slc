@@ -245,6 +245,13 @@ def compute_forward_bounds(
     :class:`~samplomatic.InjectNoise` annotation is encountered during the iteration over
     ``circuit``.
 
+    .. important::
+      Every :class:`~qiskit.circuit.BoxOp` with an :class:`~samplomatic.InjectNoise` annotation
+      **must** have a unique ``modifier_ref``, since the bounds are keyed by it. Boxing a circuit
+      with :func:`~samplomatic.transpiler.generate_boxing_pass_manager` provides this only with
+      ``inject_noise_strategy="individual_modification"``. Otherwise, the bounds of boxes sharing a
+      ``modifier_ref`` silently overwrite each other.
+
     Args:
         circuit: the target circuit.
         noise_model_paulis: the Pauli error terms to consider for each noise model.

@@ -27,8 +27,10 @@ def map_modifier_ref_to_ref(circuit: QuantumCircuit) -> dict[str, str]:
     """Iterate a circuit and map :class:`~samplomatic.InjectNoise` annotation references.
 
     The bounds computation keys its results by ``modifier_ref``, while a noise model is keyed by
-    ``ref``, so this mapping is what relates the two. Boxes without an
-    :class:`~samplomatic.InjectNoise` annotation are skipped.
+    ``ref``, so this mapping is what relates the two. This requires every ``modifier_ref`` to be
+    unique, as provided by boxing a circuit with ``inject_noise_strategy="individual_modification"``
+    (see :func:`.compute_bounds`). Boxes without an :class:`~samplomatic.InjectNoise` annotation
+    are skipped.
 
     .. plot::
        :include-source:

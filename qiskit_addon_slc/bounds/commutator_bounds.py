@@ -132,6 +132,15 @@ def compute_bounds(
     the light-cone of the observable (initialized by ``light_cone``). These computed bounds form the
     basis of the shaded light-cone.
 
+    .. important::
+      The computed bounds are keyed by ``InjectNoise.modifier_ref``, so every
+      :class:`.BoxOp` with an :class:`.InjectNoise` annotation **must** have a unique
+      ``modifier_ref``. Boxing a circuit with
+      :func:`~samplomatic.transpiler.generate_boxing_pass_manager` provides this only with
+      ``inject_noise_strategy="individual_modification"``. With any other strategy, several boxes
+      share a ``modifier_ref``, which leads to silently wrong forward bounds or a backward
+      computation that never finishes.
+
     Since this function performs a long-running computation, it gracefully handles
     ``KeyboardInterrupt`` exceptions, allowing the user to interrupt the computation at an arbitrary
     point in time and still obtain the results that have been computed up to that point.

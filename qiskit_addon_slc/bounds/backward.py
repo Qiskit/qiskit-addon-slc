@@ -132,6 +132,13 @@ def compute_backward_bounds(
     :class:`~samplomatic.InjectNoise` annotation is encountered during the iteration over
     ``circuit``.
 
+    .. important::
+      Every :class:`~qiskit.circuit.BoxOp` with an :class:`~samplomatic.InjectNoise` annotation
+      **must** have a unique ``modifier_ref``, since the bounds are keyed by it. Boxing a circuit
+      with :func:`~samplomatic.transpiler.generate_boxing_pass_manager` provides this only with
+      ``inject_noise_strategy="individual_modification"``. Otherwise, this function may never
+      return.
+
     .. caution::
       Before computing the bounds, this function removes **all** :class:`.Measure` operations from
       ``circuit``. This is required because the circuit is being inverted before being
