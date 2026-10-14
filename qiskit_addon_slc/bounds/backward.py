@@ -35,6 +35,12 @@ from qiskit.quantum_info import (
 
 from .. import globals as slc_globals
 from ..utils import remove_measure
+from ..utils._tracing import traced_span
+from ._span_attributes import (
+    record_bound,
+    record_propagation,
+    record_task_inputs,
+)
 from .commutator_bounds import (
     _DEFAULT_EVOLUTION_MAX_TERMS,
     Bounds,
@@ -81,32 +87,39 @@ def time_evolved_norm_backward(
         The unequal-time commutator bound :math:`\| \left[E, \rho\right] \|_1` for Pauli error
         :math:`E` and state :math:`\rho`, where the norm is the Schatten 1 norm (nuclear norm).
     """
-    # Convert the single Pauli to a SparsePauliOp which we can then evolve
-    pauli = SparsePauliOp(pauli)
-    pauli, trunc_onenorm = propagate_through_rotation_gates(
-        operator=pauli,
-        rot_gates=gates,
-        max_terms=evolution_max_terms,
-        atol=slc_globals.ZERO_ATOL,
-        frame="s",
-    )
-    trunc_bias = 2 * trunc_onenorm
+    with traced_span("backward_norm_computation") as span:
+        record_task_inputs(span, pauli, gates)
 
-    if trunc_bias >= 2.0:
-        return CommutatorBounds(float("NaN"), trunc_bias, False)
+        # Convert the single Pauli to a SparsePauliOp which we can then evolve
+        pauli = SparsePauliOp(pauli)
 
-    acts_on_zero = np.any(pauli.paulis.x, axis=1)
-    x = pauli.paulis.x[acts_on_zero]
-    z = pauli.paulis.z[acts_on_zero]
-    c = pauli.coeffs[acts_on_zero]
+        with traced_span("pauli_prop") as inner_span:
+            pauli, trunc_onenorm = propagate_through_rotation_gates(
+                operator=pauli,
+                rot_gates=gates,
+                max_terms=evolution_max_terms,
+                atol=slc_globals.ZERO_ATOL,
+                frame="s",
+            )
+            record_propagation(inner_span, pauli, trunc_onenorm)
 
-    uniques, which_unique_x = np.unique(x, return_inverse=True, axis=0)
-    s = np.zeros(len(uniques), dtype=complex)
-    np.add.at(s, which_unique_x, c * ((1j) ** np.sum(z * x, axis=1)))
-    sqrt_s = np.linalg.norm(s)
-    comm_norm = 2 * sqrt_s
+        trunc_bias = float(2 * trunc_onenorm)
+        if trunc_bias >= 2.0:
+            span.add_event("computation_aborted", {"reason": "truncation_bias_exceeds_bound"})
+            return record_bound(span, CommutatorBounds(float("NaN"), trunc_bias, False))
 
-    return CommutatorBounds(float(comm_norm), trunc_bias, False)
+        acts_on_zero = np.any(pauli.paulis.x, axis=1)
+        x = pauli.paulis.x[acts_on_zero]
+        z = pauli.paulis.z[acts_on_zero]
+        c = pauli.coeffs[acts_on_zero]
+
+        uniques, which_unique_x = np.unique(x, return_inverse=True, axis=0)
+        s = np.zeros(len(uniques), dtype=complex)
+        np.add.at(s, which_unique_x, c * ((1j) ** np.sum(z * x, axis=1)))
+        sqrt_s = np.linalg.norm(s)
+        comm_norm = float(2 * sqrt_s)
+
+        return record_bound(span, CommutatorBounds(comm_norm, trunc_bias, False))
 
 
 def compute_backward_bounds(
@@ -158,22 +171,25 @@ def compute_backward_bounds(
     LOGGER.info("Evolving Pauli error terms backwards through the circuit.")
     LOGGER.info("Modelling errors as though they happen *after* each noise layer.")
 
-    circuit = remove_measure(circuit).inverse()
+    with traced_span("compute_backward_bounds") as span:
+        with traced_span("preparation"):
+            circuit = remove_measure(circuit).inverse()
 
-    norm_fn = partial(
-        time_evolved_norm_backward,
-        evolution_max_terms=evolution_max_terms,
-    )
+            norm_fn = partial(
+                time_evolved_norm_backward,
+                evolution_max_terms=evolution_max_terms,
+            )
 
-    lc = LightCone.initialize_from_measurements(circuit, measure_active=True)
+            lc = LightCone.initialize_from_measurements(circuit, measure_active=True)
+            span.set_attribute("measurements.num_qubits", len(lc.qubits))
 
-    comm_norms = compute_bounds(
-        circuit,
-        noise_model_paulis,
-        lc,
-        norm_fn,
-        backwards=True,
-        **kwargs,
-    )
+        comm_norms = compute_bounds(
+            circuit,
+            noise_model_paulis,
+            lc,
+            norm_fn,
+            backwards=True,
+            **kwargs,
+        )
 
-    return comm_norms
+        return comm_norms

@@ -93,6 +93,10 @@ jobs:
         run: |
           tox -e py --parallel --parallel-no-spinner
 
+      - name: Run optional tests
+        run: |
+          tox -e py-optional
+
       - name: Run doctests
         run: |
           tox -e py-doctest

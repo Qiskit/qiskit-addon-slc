@@ -26,6 +26,8 @@ Ensures that the [Sphinx](https://www.sphinx-doc.org/) documentation builds succ
 
 Runs [the current repository's tests](/tests/#test-py-environments), doctests and notebook tests against the latest version of each dependency, under each supported Python version on Linux and under the newest one on macOS.  This is the primary testing workflow.
 
+The tests run twice, in the same way in all three test workflows: first without any of the [optional dependencies](/tests/#optional-dependencies), which proves that every test needing one is guarded, and then with all of them installed, running only the tests that those guards skipped (`tox -e py-optional`).
+
 ### Development version tests (`test_development_versions.yml`)
 
 Modifies `pyproject.toml` to use the _development_ versions of certain Qiskit packages, using [extremal-python-dependencies](https://github.com/IBM/extremal-python-dependencies).  For all other packages, the latest version is installed.  This runs on the oldest and the newest supported Python version.  Its purpose is to identify as soon as possible (i.e., before a Qiskit release) when changes upstream will break the current repository.
