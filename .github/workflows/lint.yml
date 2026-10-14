@@ -37,10 +37,38 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
 
+      # `Cargo.lock` is committed and pins every dependency to crates.io, so it fully describes what
+      # gets downloaded.  Deliberately the registry only, not `target/`: the extension is rebuilt in
+      # release mode with LTO from a fresh checkout on every run, so its artifacts would need a key on
+      # every source change.  `restore-keys` is safe here because the registry is content-addressed --
+      # a partial restore is just a warm subset that cargo completes and checksums.
+      - name: Cache cargo registry
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+          key: cargo-registry-v1 | ${{ runner.os }} | ${{ runner.arch }} | ${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            cargo-registry-v1 | ${{ runner.os }} | ${{ runner.arch }}
+
+      # The package is a maturin-built PyO3 extension, so every tox environment compiles it.
+      - name: Install Rust
+        run: rustup toolchain install stable --profile minimal --component rustfmt,clippy --no-self-update
+
       - name: Install tox
         run: |
           python -m pip install --upgrade pip
           pip install tox
+
+      - name: Check Rust formatting
+        run: |
+          cargo fmt --all -- --check
+
+      - name: Run clippy
+        run: |
+          cargo clippy --all-targets --locked -- -D warnings
 
       - name: Run lint check
         run: |

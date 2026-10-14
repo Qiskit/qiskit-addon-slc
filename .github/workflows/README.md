@@ -12,11 +12,13 @@ Most workflows here are _reusable_: they only have a `workflow_call` trigger and
 
 Most jobs are guarded by `github.repository_owner == 'Qiskit'`, so they skip on forks.
 
+The package contains a Rust extension (`qiskit_addon_slc._accelerate`, built by [maturin](https://www.maturin.rs/)), so every job that installs it first installs a stable Rust toolchain and restores the cargo registry cache, keyed on `Cargo.lock`.  The package source lives under `python/`, so tests and documentation builds import the wheel that tox installs; only the doctest and coverage environments use an editable install (see `tox.ini`).
+
 ## Required checks (called by `branch-protection.yml`)
 
 ### Lint check (`lint.yml`)
 
-Checks that the code is formatted properly and follows the style guide by running the [lint environment](/tests/#lint-environment) (`tox -e lint`).
+Checks that the code is formatted properly and follows the style guide by running the [lint environment](/tests/#lint-environment) (`tox -e lint`).  The Rust code is checked with `cargo fmt --check` and `cargo clippy -D warnings`.
 
 ### Documentation (`docs.yml`)
 
@@ -24,7 +26,7 @@ Ensures that the [Sphinx](https://www.sphinx-doc.org/) documentation builds succ
 
 ### Latest version tests (`test_latest_versions.yml`)
 
-Runs [the current repository's tests](/tests/#test-py-environments), doctests and notebook tests against the latest version of each dependency, under each supported Python version on Linux and under the newest one on macOS.  This is the primary testing workflow.
+Runs [the current repository's tests](/tests/#test-py-environments), doctests and notebook tests against the latest version of each dependency, under each supported Python version on Linux and under the newest one on macOS and Windows.  This is the primary testing workflow.
 
 ### Development version tests (`test_development_versions.yml`)
 
@@ -54,6 +56,12 @@ Only triggered when the `CITATION.bib` file is changed.  It ensures that the fil
 
 Backports are opened by [Mergify](https://mergify.com/) for pull requests labeled `stable backport potential` (see [`.mergify.yml`](/.mergify.yml)).  This workflow copies the labels and milestone of the original pull request onto the backport.
 
+### Wheel builds (`wheels-build.yml`, `wheels-pr.yml`)
+
+`wheels-build.yml` is a reusable workflow that builds the sdist and, with [cibuildwheel](https://cibuildwheel.pypa.io/), the binary wheels for Linux (x86_64, aarch64), macOS (arm64, x86_64) and Windows (x86_64).  The extension targets the stable ABI (`abi3-py310`), so each platform yields a single `cp310-abi3` wheel, which cibuildwheel tests under every supported Python.  Its configuration lives in `[tool.cibuildwheel]` in `pyproject.toml`.
+
+`wheels-pr.yml` runs it on a pull request labeled `ci: test wheels`, to check the wheel builds before a release.
+
 ### Release (`release.yml`)
 
-Triggered by a maintainer pushing a version-shaped tag (e.g. `0.2.0` or `0.2.0rc1`).  It builds the sdist and wheel once, attaches them to a new GitHub release (marked as a pre-release when the tag has a pre-release suffix) and publishes them to [PyPI](https://pypi.org/).
+Triggered by a maintainer pushing a version-shaped tag (e.g. `0.2.0` or `0.2.0rc1`).  It builds the sdist and wheels once via `wheels-build.yml`, attaches them to a new GitHub release (marked as a pre-release when the tag has a pre-release suffix) and publishes them to [PyPI](https://pypi.org/).
