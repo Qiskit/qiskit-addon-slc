@@ -42,7 +42,7 @@ on:
         description: >
           The current release branch.  Its documentation is what GitHub Pages serves.  Keep in step
           with the backport target in `.mergify.yml`.
-        value: 'stable/0.1'
+        value: 'stable/0.2'
 
       runner-linux-x86_64:
         description: Runner image for Linux x86_64 jobs.
