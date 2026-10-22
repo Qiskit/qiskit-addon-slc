@@ -48,6 +48,8 @@ jobs:
         include:
           - runner: ${{ needs.config.outputs.runner-macos-arm64 }}
             python-version: ${{ needs.config.outputs.python-new }}
+          - runner: ${{ needs.config.outputs.runner-windows-x86_64 }}
+            python-version: ${{ needs.config.outputs.python-new }}
 
   test-minimum:
     name: Tests / Minimum

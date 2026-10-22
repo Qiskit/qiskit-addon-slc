@@ -52,6 +52,10 @@ on:
         description: Runner image for macOS ARM64 jobs.
         value: 'macos-latest'
 
+      runner-windows-x86_64:
+        description: Runner image for Windows x86_64 jobs.
+        value: 'windows-latest'
+
 jobs:
   # We have to have _some_ job defined or the workflow isn't valid.
   noop:

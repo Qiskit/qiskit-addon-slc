@@ -21,23 +21,11 @@ jobs:
   build:
     name: Build distributions
     needs: config
-    runs-on: ${{ needs.config.outputs.runner-linux-x86_64 }}
-    steps:
-      - name: Checkout tag
-        uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
-        name: Install Python
-        with:
-          python-version: ${{ needs.config.outputs.python-new }}
-      - name: Build sdist and wheel
-        run: |
-          set -e
-          python -m pip install --upgrade pip build
-          python -m build
-      - uses: actions/upload-artifact@v7
-        with:
-          path: ./dist/*
-          name: deploy-dist
+    uses: ./.github/workflows/wheels-build.yml
+    with:
+      artifact-prefix: "deploy-"
+      default-action: "build"
+      python-version: ${{ needs.config.outputs.python-new }}
 
   github:
     name: Publish to GitHub

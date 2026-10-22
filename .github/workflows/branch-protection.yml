@@ -85,13 +85,15 @@ jobs:
       python-version: ${{ matrix.python-version }}
     strategy:
       fail-fast: false
-      # Every supported Python version on Linux, plus the newest one on macOS.
+      # Every supported Python version on Linux, plus the newest one on macOS and on Windows.
       matrix:
         runner:
           - ${{ needs.config.outputs.runner-linux-x86_64 }}
         python-version: ${{ fromJSON(needs.config.outputs.python-all) }}
         include:
           - runner: ${{ needs.config.outputs.runner-macos-arm64 }}
+            python-version: ${{ needs.config.outputs.python-new }}
+          - runner: ${{ needs.config.outputs.runner-windows-x86_64 }}
             python-version: ${{ needs.config.outputs.python-new }}
 
   test-minimum:
