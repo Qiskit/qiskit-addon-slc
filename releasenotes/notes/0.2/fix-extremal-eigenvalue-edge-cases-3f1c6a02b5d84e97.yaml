@@ -1,0 +1,5 @@
+---
+fixes:
+  - |
+    Fixed :func:`~qiskit_addon_slc.utils.get_extremal_eigenvalue` to properly handle
+    operators with no negative eigenvalue (does not affect normal SLC computations).

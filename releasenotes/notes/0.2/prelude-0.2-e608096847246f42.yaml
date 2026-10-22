@@ -1,0 +1,14 @@
+---
+prelude: |
+    This release makes bound computation faster, more robust, and more
+    extensible, and brings native support for Windows.
+
+    The forward and backward bound computations have been reworked to keep all
+    worker processes busy and can be interrupted gracefully while preserving the
+    results computed so far. The building blocks behind them are now public, so
+    you can assemble custom bounds with
+    :func:`~qiskit_addon_slc.bounds.compute_bounds`. For standard PEC
+    experiments, :func:`~qiskit_addon_slc.bounds.compute_local_scales` can now
+    apply SLC in post-processing via ``apply_in_post``. The new
+    :func:`~qiskit_addon_slc.visualization.animate_shaded_lightcone` makes light
+    cones on heavy-hex and square-lattice devices easier to interpret.

@@ -268,7 +268,7 @@ dependencies = [
 
 [[package]]
 name = "qiskit_addon_slc_accelerate"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "nalgebra",
  "num-complex",

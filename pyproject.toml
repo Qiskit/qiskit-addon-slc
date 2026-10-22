@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "qiskit-addon-slc"
-version = "0.1.0"
+version = "0.2.0"
 readme = "README.md"
 description = "Reducing PEC sampling overhead with shaded lightcones"
 license = "Apache-2.0"
