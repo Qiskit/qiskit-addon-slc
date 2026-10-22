@@ -1,0 +1,8 @@
+---
+features:
+  - |
+    Faster operator-norm computations in some cases. :func:`~qiskit_addon_slc.utils.get_extremal_eigenvalue`
+    now first tries to reduce the operator to fewer qubits, applicable when the spectrum consists of
+    repeated eigenvalues. The reduced operator is block-diagonal, and whenever its blocks have at most
+    :math:`2^8` rows they are diagonalized exactly, however many of them there are. Only operators with
+    larger blocks are solved with the iterative (Davidson) method.

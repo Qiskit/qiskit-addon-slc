@@ -4,18 +4,18 @@ features:
     Added support for Windows.
   - |
     The Davidson eigensolver used internally by
-    :func:`~qiskit_addon_slc.utils.davidson.get_extremal_eigenvalue` is now
+    :func:`~qiskit_addon_slc.utils.get_extremal_eigenvalue` is now
     provided by a compiled Rust extension (built on ``nalgebra``).
 upgrade:
   - |
     ``pyscf`` is no longer a dependency. The Davidson eigensolver behind
-    :func:`~qiskit_addon_slc.utils.davidson.get_extremal_eigenvalue` was
+    :func:`~qiskit_addon_slc.utils.get_extremal_eigenvalue` was
     previously provided by ``pyscf``, which had no Windows wheel and could not be
     built from source on Windows; it is now the compiled Rust extension.
 deprecations:
   - |
     Passing arbitrary keyword arguments to
-    :func:`~qiskit_addon_slc.utils.davidson.get_extremal_eigenvalue` is
+    :func:`~qiskit_addon_slc.utils.get_extremal_eigenvalue` is
     deprecated. They used to be forwarded to ``pyscf.lib.davidson1``; now they
     are ignored and raise a ``DeprecationWarning``. The options that the new
     solver supports, ``tol``, ``max_cycle``, ``max_space`` and ``lindep``, are

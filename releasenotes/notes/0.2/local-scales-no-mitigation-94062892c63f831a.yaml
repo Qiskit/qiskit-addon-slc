@@ -1,0 +1,9 @@
+---
+fixes:
+  - |
+    Fixed :func:`~qiskit_addon_slc.bounds.compute_local_scales` raising an ``IndexError`` when no
+    error term gets selected for mitigation. This is reachable through each of the three conditions
+    making up the selection: a ``sampling_cost_budget`` below the cost of even the cheapest term, a
+    ``bias_tolerance`` already above the total bias bound, or a set of commutator bounds that are all
+    zero. Mitigating nothing is now reported with a sampling cost overhead of ``1.0``, the value of
+    not mitigating anything.
