@@ -6,4 +6,4 @@ pull_request_rules:
       backport:
         branches:
           # Keep in step with `stable-branch` in `.github/workflows/config.yml`.
-          - stable/0.1
+          - stable/0.2
