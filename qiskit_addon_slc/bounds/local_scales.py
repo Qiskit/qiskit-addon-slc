@@ -203,4 +203,4 @@ def compute_local_scales(
         this_mask, mask = np.split(mask, [num_terms])
         mask_[box_id] = np.asarray(this_mask, dtype=float)
 
-    return mask_, sampling_cost, bias_remaining
+    return mask_, float(sampling_cost), float(bias_remaining)

@@ -19,8 +19,7 @@
 from __future__ import annotations
 
 import logging
-import sys
-from typing import NamedTuple
+from typing import NamedTuple, Self
 
 import numpy as np
 from qiskit import QuantumCircuit
@@ -29,11 +28,6 @@ from qiskit.circuit.commutation_library import SessionCommutationChecker as scc
 from qiskit.circuit.library import PauliGate, ZGate
 from qiskit.converters import circuit_to_dag
 from qiskit.quantum_info import Pauli
-
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
 
 LOGGER = logging.getLogger(__name__)
 

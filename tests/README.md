@@ -37,10 +37,10 @@ The command `tox -e style` will apply automated style fixes.  This includes:
 
 ## Test (py##) environments
 
-The `py##` environments are the main test environments.  tox defines one for each version of Python.  For instance, the following command will run the tests on Python 3.10, Python 3.11, and Python 3.12:
+The `py##` environments are the main test environments.  tox defines one for each version of Python.  For instance, the following command will run the tests on Python 3.11 and Python 3.12:
 
 ```sh
-$ tox -e py310,py311,py312
+$ tox -e py311,py312
 ```
 
 These environments execute all tests using [pytest], which supports its own simple style of tests, in addition to [unittest]-style tests.
@@ -50,7 +50,7 @@ These environments execute all tests using [pytest], which supports its own simp
 The `notebook` and `py##-notebook` environments invoke [nbmake] to ensure that all Jupyter notebooks in the [`docs/`](/docs/) directory execute successfully.
 
 ```sh
-$ tox -e py310-notebook
+$ tox -e py311-notebook
 ```
 
 ## Doctest environment

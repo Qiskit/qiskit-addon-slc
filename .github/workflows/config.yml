@@ -8,8 +8,8 @@
 # Every value here is a literal declared directly as a `workflow_call` output, so callers can read
 # them as `needs.config.outputs.<name>` without this workflow needing any real jobs.
 #
-# Note that all values must be quoted: an unquoted `3.10` is the *number* 3.1, which would install
-# Python 3.1 rather than 3.10.
+# Note that all values must be quoted: for example, an unquoted `3.10` is the *number* 3.1, which
+# would install Python 3.1 rather than 3.10.
 
 name: Set CI configuration
 
@@ -18,7 +18,7 @@ on:
     outputs:
       python-old:
         description: Oldest supported version of Python (see `requires-python` in `pyproject.toml`).
-        value: '3.10'
+        value: '3.11'
 
       python-new:
         description: Newest supported version of Python.
@@ -28,7 +28,7 @@ on:
         description: >
           Every supported version of Python, as a JSON list for use with `fromJSON` in a matrix.  Keep
           in step with the classifiers in `pyproject.toml` and the `envlist` in `tox.ini`.
-        value: '["3.10", "3.11", "3.12", "3.13", "3.14"]'
+        value: '["3.11", "3.12", "3.13", "3.14"]'
 
       python-coverage:
         description: >
@@ -36,7 +36,7 @@ on:
           sweep a range of versions, they just need a single one that all of the tooling supports.
           This must match the `basepython` of the corresponding environments in `tox.ini`, or tox
           will fail to find an interpreter.
-        value: '3.10'
+        value: '3.11'
 
       stable-branch:
         description: >

@@ -16,7 +16,6 @@ classifiers = [
     "Natural Language :: English",
     "Operating System :: MacOS",
     "Operating System :: POSIX :: Linux",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -24,7 +23,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Physics",
 ]
 
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 
 dependencies = [
     "matplotlib>=3.10.5, <4",
@@ -104,14 +103,16 @@ only-include = [
 allow-direct-references = true
 
 [tool.mypy]
-python_version = "3.10"
+# Deliberately ahead of requires-python.  numpy's stubs use PEP 695 "type"
+# statements, which mypy rejects unless it is analyzing as 3.12 or later.
+python_version = "3.12"
 show_error_codes = true
 warn_return_any = true
 warn_unused_configs = true
 ignore_missing_imports = true
 
 [tool.pylint.main]
-py-version = "3.10"
+py-version = "3.11"
 
 [tool.pylint."messages control"]
 disable = ["all"]
@@ -133,7 +134,7 @@ testpaths = ["./qiskit_addon_slc/", "./tests/"]
 [tool.ruff]
 line-length = 100
 src = ["qiskit_addon_slc", "tests"]
-target-version = "py310"
+target-version = "py311"
 
 [tool.ruff.lint]
 select = [
@@ -183,6 +184,7 @@ notice-rgx = """
 convention = "google"
 
 [tool.typos.default.extend-words]
+aer = "aer"
 arange = "arange"
 CPY = "CPY"
 IZ = "IZ"  # Pauli string, not a typo of "IS"
