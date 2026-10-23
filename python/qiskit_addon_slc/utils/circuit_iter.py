@@ -50,9 +50,8 @@ def iter_circuit(
         log_process: whether to log process.
 
     Yields:
-        Tuples of length four, consisting of the encountered circuit instruction, the `canonical
-        qubit indices
-        <https://qiskit.github.io/samplomatic/guides/samplex_io.html#qubit-ordering-convention>`_
+        Tuples of length four, consisting of the encountered circuit instruction, the
+        :external+samplomatic:ref:`canonical qubit indices <samplex-io>`
         (i.e. the integer indices of the acted-upon qubits in the context of the input ``circuit``),
         the :class:`~samplomatic.InjectNoise` attributes: ``modifier_ref`` and ``ref``. The latter
         two items may be ``None`` indicating a circuit instruction that was **not** part of an

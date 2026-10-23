@@ -103,7 +103,7 @@ intersphinx_mapping = {
     "qiskit_ibm_runtime": ("https://qiskit.github.io/qiskit-ibm-runtime/", None),
     "qiskit_addon_utils": ("https://qiskit.github.io/qiskit-addon-utils/", None),
     "pauli_prop": ("https://qiskit.github.io/pauli-prop/", None),
-    "samplomatic": ("https://qiskit.github.io/samplomatic/", None),
+    "samplomatic": ("https://quantum.cloud.ibm.com/docs/api/samplomatic/", None),
     "rustworkx": ("https://www.rustworkx.org/", None),
 }
 
